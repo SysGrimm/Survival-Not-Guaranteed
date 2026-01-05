@@ -343,7 +343,7 @@
       },
       "env": {
         "client": "required",
-        "server": "unsupported"
+        "server": "required"
       },
       "fileSize": 357489,
       "downloads": [
