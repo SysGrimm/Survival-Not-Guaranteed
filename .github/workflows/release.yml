@@ -375,8 +375,7 @@ jobs:
           # Upload using the JSON file
           local response=$(curl -X POST "https://api.modrinth.com/v2/version" \
             -H "Authorization: $MODRINTH_TOKEN" \
-            -H "Content-Type: multipart/form-data" \
-            -F "data=@/tmp/modrinth_data.json" \
+            -F "data=@/tmp/modrinth_data.json;type=application/json" \
             -F "mrpack-file=@$file_path" 2>/dev/null || echo "")
           
           if echo "$response" | jq -e '.id' >/dev/null 2>&1; then
