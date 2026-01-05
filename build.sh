@@ -30,7 +30,7 @@ CURSEFORGE_API_KEY="${CURSEFORGE_API_KEY:-}"
 PROJECT_NAME="Survival Not Guaranteed"
 MINECRAFT_VERSION="1.21.1"
 MODLOADER="neoforge"
-NEOFORGE_VERSION="21.1.194"
+NEOFORGE_VERSION="21.1.215"
 
 # Project configuration for version checking
 GITHUB_REPO="Manifesto2147/Survival-Not-Guaranteed"
@@ -677,7 +677,15 @@ get_latest_version() {
     stored_hash=$(cat .content_hash)
   fi
   
-  if [ "$current_hash" != "$stored_hash" ]; then
+  # Check for update marker from smart-dependency-update.sh
+  local force_version_bump=false
+  if [ -f "$MODS_DIR/.updated" ]; then
+    echo "- Update marker detected: mods were updated"
+    force_version_bump=true
+    rm -f "$MODS_DIR/.updated"  # Clear the marker
+  fi
+  
+  if [ "$current_hash" != "$stored_hash" ] || [ "$force_version_bump" = true ]; then
     echo "- Content changes detected, analyzing change type..."
     
     # Parse current and stored hashes

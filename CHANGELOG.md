@@ -1,24 +1,22 @@
-Survival Not Guaranteed v3.14.1
+Survival Not Guaranteed v3.14.3
 
-Release Date: August 15, 2025
-Previous Version: 3.14.0
+Release Date: January 05, 2026
+Previous Version: 3.14.3
 
-CONFIGURATION CHANGES
+OTHER CHANGES
 
-- Streamlined resource packs: Removed Fresh Mob Overhaul and Gray's Mob Overhaul
-- Kept only Alacrity resource pack for optimized visual experience
-- Updated options.txt to reflect resource pack changes
-- Performance and balance improvements
+- Updated modpack components
+- General improvements and optimizations
 
 TECHNICAL DETAILS
 
-- Total Mods: 141
-- Universal Mods (Client + Server): 130
-- Client-Only Mods: 10
-- Server-Only Mods: 1
+- Total Mods: 146
+- Universal Mods (Client + Server): 133
+- Client-Only Mods: 13
+- Server-Only Mods: 0
 - Minecraft Version: 1.21.1
-- NeoForge Version: 21.1.194
-- External Downloads: 141 of 141 (100%)
+- NeoForge Version: 21.1.215
+- External Downloads: 146 of 146 (100%)
 - Pack Size: Optimized with external downloads
 - Server Compatibility: Dedicated servers will automatically exclude client-only mods
 
