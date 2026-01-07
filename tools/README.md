@@ -40,7 +40,7 @@ The original issue was caused by missing User-Agent headers in API requests and 
 4. **`debug-get-mod-info.sh`** - API debugging tool
 5. **`debug-api.sh`** - Low-level API testing
 
-### Legacy/Broken Scripts ❌
+### Legacy/Broken Scripts
 
 - `simple-test-update.sh` - Has JSON parsing issues
 - `multi-mod-update.sh` - Complex function issues

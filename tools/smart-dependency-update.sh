@@ -16,9 +16,9 @@ MAGENTA='\033[0;95m'
 NC='\033[0m'
 
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
-log_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+log_success() { echo -e "${GREEN}[+]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
-log_error() { echo -e "${RED}[✗]${NC} $1"; }
+log_error() { echo -e "${RED}[-]${NC} $1"; }
 log_wave() { echo -e "${MAGENTA}[WAVE]${NC} $1"; }
 log_check() { echo -e "${CYAN}[CHECK]${NC} $1"; }
 
@@ -530,17 +530,17 @@ if [[ $MISSING_DEPS_COUNT -gt 0 ]]; then
                 printf "\r\033[K[%d/%d] Downloading: %s v%s" "$((idx + 1))" "$MISSING_DEPS_COUNT" "$dep_name" "$dep_version"
                 if curl -s --max-time 30 -L -o "$MODS_DIR/$dep_filename" "$dep_download_url" 2>/dev/null; then
                     DOWNLOADED_COUNT=$((DOWNLOADED_COUNT + 1))
-                    printf "\r\033[K[%d/%d] ✓ Downloaded: %s v%s\n" "$((idx + 1))" "$MISSING_DEPS_COUNT" "$dep_name" "$dep_version"
+                    printf "\r\033[K[%d/%d] + Downloaded: %s v%s\n" "$((idx + 1))" "$MISSING_DEPS_COUNT" "$dep_name" "$dep_version"
                 else
                     FAILED_COUNT=$((FAILED_COUNT + 1))
-                    printf "\r\033[K[%d/%d] ✗ Download failed: %s\n" "$((idx + 1))" "$MISSING_DEPS_COUNT" "$dep_name"
+                    printf "\r\033[K[%d/%d] - Download failed: %s\n" "$((idx + 1))" "$MISSING_DEPS_COUNT" "$dep_name"
                 fi
             else
                 printf "\r\033[K[%d/%d] Found: %s v%s (dry run)\n" "$((idx + 1))" "$MISSING_DEPS_COUNT" "$dep_name" "$dep_version"
             fi
         else
             FAILED_COUNT=$((FAILED_COUNT + 1))
-            printf "\r\033[K[%d/%d] ✗ Not found on Modrinth: %s\n" "$((idx + 1))" "$MISSING_DEPS_COUNT" "$dep_id"
+            printf "\r\033[K[%d/%d] - Not found on Modrinth: %s\n" "$((idx + 1))" "$MISSING_DEPS_COUNT" "$dep_id"
         fi
     done
     printf "\n"
@@ -737,7 +737,7 @@ if [[ $UNSAFE_UPDATES -gt 0 ]]; then
         filename="${PROJECT_TO_FILE[$project_id]}"
         IFS=':' read -r _ current_ver latest_ver mod_name _ _ <<< "${MOD_INFO[$filename]}"
         
-        printf "${RED}[✗]${NC} %-40s %s → %s\n" "$mod_name" "$current_ver" "$latest_ver"
+        printf "${RED}[-]${NC} %-40s %s → %s\n" "$mod_name" "$current_ver" "$latest_ver"
         
         if [[ "$safety" == needs_deps:* ]]; then
             reason="${safety#needs_deps:}"
@@ -809,14 +809,14 @@ else
                 # Remove old version
                 rm -f "$MODS_DIR/$filename"
                 DOWNLOAD_SUCCESS=$((DOWNLOAD_SUCCESS + 1))
-                printf "\r\033[K[%d/%d] ✓ Updated: %s\n" "$CURRENT_UPDATE" "$TOTAL_TO_UPDATE" "$mod_name"
+                printf "\r\033[K[%d/%d] + Updated: %s\n" "$CURRENT_UPDATE" "$TOTAL_TO_UPDATE" "$mod_name"
             else
                 DOWNLOAD_FAILED=$((DOWNLOAD_FAILED + 1))
-                printf "\r\033[K[%d/%d] ✗ Failed: %s\n" "$CURRENT_UPDATE" "$TOTAL_TO_UPDATE" "$mod_name"
+                printf "\r\033[K[%d/%d] - Failed: %s\n" "$CURRENT_UPDATE" "$TOTAL_TO_UPDATE" "$mod_name"
             fi
         else
             DOWNLOAD_FAILED=$((DOWNLOAD_FAILED + 1))
-            printf "\r\033[K[%d/%d] ✗ No download URL: %s\n" "$CURRENT_UPDATE" "$TOTAL_TO_UPDATE" "$mod_name"
+            printf "\r\033[K[%d/%d] - No download URL: %s\n" "$CURRENT_UPDATE" "$TOTAL_TO_UPDATE" "$mod_name"
         fi
     done
     

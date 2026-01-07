@@ -13,7 +13,7 @@ For comprehensive technical documentation, build processes, and development guid
 
 ---
 
-## 📋 Recent Changes
+## Recent Changes
 
 ### v3.12.12 (Latest) - Cold Sweat Temperature Sync Fix
 **🔥 Critical Bug Fix**: Resolved temperature desynchronization between Cold Sweat and Serene Seasons
@@ -38,12 +38,12 @@ For comprehensive technical documentation, build processes, and development guid
 
 This modpack employs a revolutionary pure external download architecture that has solved all launcher compatibility issues:
 
-- **📋 Manifest Authority**: `modrinth.index.json` is the immutable source of truth for all mod information
+- **Manifest Authority**: `modrinth.index.json` is the immutable source of truth for all mod information
 - **� Pure External Downloads**: .mrpack files contain zero embedded mods - everything downloaded fresh by launchers
 - **⚡ CI Mode**: Lightning-fast CI that preserves manifests without mod scanning or downloading
 - **✅ Perfect Compatibility**: Zero "missing download link" errors across all launcher platforms
 - **🎯 Server-Only Support**: Dungeons & Taverns mods properly distributed for server environments
-- **📦 Size Optimization**: 99%+ size reduction (~2MB vs 2GB+) with superior functionality
+- **Size Optimization**: 99%+ size reduction (~2MB vs 2GB+) with superior functionality
 - **🔄 Version Intelligence**: Automatic version collision detection with smart auto-increment
 - **🛡️ Legal Perfection**: 100% official Modrinth sources with zero cached or unofficial content
 
@@ -72,7 +72,7 @@ git push origin main  # Triggers pure external CI/CD
 **Benefits Achieved:**
 - 🚫 **No more launcher errors** - Pure external architecture eliminates all download link issues
 - ⚡ **Lightning CI speed** - No mod downloading needed, pure manifest operations  
-- 📦 **Massive size reduction** - 99%+ smaller .mrpack files with better functionality
+- **Massive size reduction** - 99%+ smaller .mrpack files with better functionality
 - 🔄 **Automatic updates** - Mod updates flow through without pack rebuilds
 - 🌍 **Universal compatibility** - Single .mrpack works perfectly everywhere
 - 🛡️ **Legal compliance** - Only official sources, zero legal concerns

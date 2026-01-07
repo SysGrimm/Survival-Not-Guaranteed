@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "game": "minecraft",
-  "versionId": "3.14.3",
+  "versionId": "3.14.6",
   "name": "Survival Not Guaranteed",
   "summary": "A challenging survival modpack featuring magic, technology, and culinary adventures with optimized shaders",
   "files": [
@@ -333,6 +333,21 @@
       "fileSize": 328814,
       "downloads": [
         "https://cdn.modrinth.com/data/uy4Cnpcm/versions/vQ3DXKc6/bookshelf-neoforge-1.21.1-21.1.80.jar"
+      ]
+    },
+    {
+      "path": "mods/botanypots-neoforge-1.21.1-21.1.41.jar",
+      "hashes": {
+        "sha1": "4f216887a3b95d6abde0f2458a94487523531a1c",
+        "sha512": "d080c53d66b8cf4cc9d8f4c30ac89ff69e89ed27bdb299474e1c6afca6bd1eb071ffb6eecdccd01d93ab6151aebe3d78e8ff7596b1d36eac3415fea4b1c06d68"
+      },
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "fileSize": 1065153,
+      "downloads": [
+        "https://cdn.modrinth.com/data/U6BUTZ7K/versions/DZU8FqKS/botanypots-neoforge-1.21.1-21.1.41.jar"
       ]
     },
     {
@@ -681,21 +696,6 @@
       ]
     },
     {
-      "path": "mods/create_wizardry-0.3.5.jar",
-      "hashes": {
-        "sha1": "b71a4df626992792aafd3b2350f638cc1cda411f",
-        "sha512": "498d3ecd790d2474e691f5edb6023c793b41b098a9cc7e681a9881c679610f1b8ebe5f54fb99f6fd25442d8ff5ce401fdc3d04fd722dbe33fb36bcfaf07aceed"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "fileSize": 184183,
-      "downloads": [
-        "https://cdn.modrinth.com/data/OeGdeWEj/versions/PhsfUFXT/create_wizardry-0.3.5.jar"
-      ]
-    },
-    {
       "path": "mods/CreativeCore_NEOFORGE_v2.13.24_mc1.21.1.jar",
       "hashes": {
         "sha1": "d8e0118cfe40132efe2e4bc45a06d309b22f1c65",
@@ -733,7 +733,7 @@
       },
       "env": {
         "client": "required",
-        "server": "unsupported"
+        "server": "required"
       },
       "fileSize": 354436,
       "downloads": [
@@ -996,21 +996,6 @@
       ]
     },
     {
-      "path": "mods/ec_isasb_plugin-1.21.1-1.0.1.jar",
-      "hashes": {
-        "sha1": "e0c53c75a54a117cf5831b1a7cdffd2a09c595e3",
-        "sha512": "eb20d2bf2a63bf8eb3ff056af85b06437dad139aef14ff7d244b7fcf756a6e86ac8133270044325f481dd8208f75bd7fc2d119fadd81284326d350f871d5c950"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "fileSize": 167810,
-      "downloads": [
-        "https://cdn.modrinth.com/data/IiQQ2cUS/versions/FkGsX3wo/ec_isasb_plugin-1.21.1-1.0.1.jar"
-      ]
-    },
-    {
       "path": "mods/ec_lec_plugin-1.21.1-2.0.4.jar",
       "hashes": {
         "sha1": "cea95a8fbb5659c7e824e652635a665fd15892e3",
@@ -1183,7 +1168,7 @@
       },
       "env": {
         "client": "required",
-        "server": "unsupported"
+        "server": "required"
       },
       "fileSize": 104654,
       "downloads": [
@@ -1341,21 +1326,6 @@
       ]
     },
     {
-      "path": "mods/irons_spellbooks-1.21.1-3.14.8.jar",
-      "hashes": {
-        "sha1": "9f3c9ec0ab3d1caed39010eaaf32c46d16901952",
-        "sha512": "7ed9891680413913e22179a9b7e707271e97453bc4d2a23bc7a6c6da2d6572eb611b3f73e2c2ccb44326cc857335e2546c2313f6b4f41b18815ae9cc63d13f3d"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "fileSize": 12529766,
-      "downloads": [
-        "https://cdn.modrinth.com/data/s4OWxYQQ/versions/4GN2MStD/irons_spellbooks-1.21.1-3.14.8.jar"
-      ]
-    },
-    {
       "path": "mods/jei-1.21.1-neoforge-19.27.0.335.jar",
       "hashes": {
         "sha1": "4e18d321bdc23762ff0bc19e9e7a08b49866c449",
@@ -1398,6 +1368,21 @@
       "fileSize": 6730190,
       "downloads": [
         "https://cdn.modrinth.com/data/ordsPcFz/versions/pp2cY80Q/kotlinforforge-5.10.0-all.jar"
+      ]
+    },
+    {
+      "path": "mods/lambdynamiclights-4.8.7+1.21.1.jar",
+      "hashes": {
+        "sha1": "b7dc4acb053b98810faffab19fde0f18b453a824",
+        "sha512": "eac2c2f5c0a5cc3fa28895ddc3203b2b7214c680dd9c47eabf308fa96f2f54d1a1a5a16b50c35865b61068bd834d538f90e02aceb4c5d9594793807b6068123c"
+      },
+      "env": {
+        "client": "required",
+        "server": "unsupported"
+      },
+      "fileSize": 2012226,
+      "downloads": [
+        "https://cdn.modrinth.com/data/yBW8D80W/versions/CQuTG9xY/lambdynamiclights-4.8.7%2B1.21.1.jar"
       ]
     },
     {
@@ -1956,18 +1941,18 @@
       ]
     },
     {
-      "path": "mods/supermartijn642corelib-1.1.18b-neoforge-mc1.21.jar",
+      "path": "mods/supermartijn642corelib-1.1.19-neoforge-mc1.21.jar",
       "hashes": {
-        "sha1": "bfec1a4737355f2f3bbb4486563a015a01f80b30",
-        "sha512": "39a10569745c97b05ffef15ef4a05e2706c07a9ca7bb12a57ff5813fee0bbf7011725d362315b6ab17058ddd8a9cd1e44c8267294a60685bedc328bc664e2c57"
+        "sha1": "7288a5f11ffedc72495d0afaca64f2e83f9c9c0f",
+        "sha512": "80aec2e9828c2a140972750e5ef38fcad099502f0e3c4715a970d1b646a92dbd7e30228fdf97c7a7523531880022ea41398fde3b070fb50e101681082be82f95"
       },
       "env": {
         "client": "required",
         "server": "required"
       },
-      "fileSize": 518646,
+      "fileSize": 519542,
       "downloads": [
-        "https://cdn.modrinth.com/data/rOUBggPv/versions/NEkQq7EH/supermartijn642corelib-1.1.18b-neoforge-mc1.21.jar"
+        "https://cdn.modrinth.com/data/rOUBggPv/versions/lhA84Gn9/supermartijn642corelib-1.1.19-neoforge-mc1.21.jar"
       ]
     },
     {

@@ -5,6 +5,13 @@
   "gameVersion": "1.21.1",
   "modLoader": "neoforge",
   "modLoaderVersion": "21.1.180",
+  "servers": [
+    {
+      "name": "Survival Not Guaranteed Official Server",
+      "address": "survivalnotguaranteed.hardmode.pro:26635",
+      "description": "The official Survival Not Guaranteed multiplayer server"
+    }
+  ],
   "java": {
     "component": "java-runtime-epsilon",
     "majorVersion": 17

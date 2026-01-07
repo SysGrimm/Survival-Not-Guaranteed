@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Final Multi-Platform .mrpack Builder with Comprehensive Mirror Support
-# Ensures all mods get proper download URLs from Modrinth, CurseForge, or manual overrides
+# Ensures all mods get proper download URLs from Modrinth or manual overrides
 # Never includes mod files unless absolutely necessary
 
 set -e
@@ -26,7 +26,6 @@ done
 
 # Configuration
 MODS_DIR="mods"
-CURSEFORGE_API_KEY="${CURSEFORGE_API_KEY:-}"
 PROJECT_NAME="Survival Not Guaranteed"
 MINECRAFT_VERSION="1.21.1"
 MODLOADER="neoforge"
@@ -45,7 +44,6 @@ STRICT_EXTERNAL_DOWNLOADS="${STRICT_EXTERNAL_DOWNLOADS:-true}"
 # Statistics tracking
 TOTAL_MODS=0
 MODRINTH_FOUND=0
-CURSEFORGE_FOUND=0
 MANUAL_OVERRIDES_USED=0
 PACK_INCLUDED=0
 CLIENT_ONLY_MODS=0
@@ -71,6 +69,7 @@ get_modrinth_compatibility() {
     fi
     
     # Fetch from API
+    api_rate_limit
     local response=$(curl -s "https://api.modrinth.com/v2/project/$mod_slug" 2>/dev/null || echo "")
     
     if [[ -n "$response" && $(echo "$response" | jq -e '.client_side' 2>/dev/null) ]]; then
@@ -277,6 +276,13 @@ get_mod_environment() {
 
 # ==================== UTILITY FUNCTIONS ====================
 
+# API rate limiting - add small delay between calls
+api_rate_limit() {
+  # Sleep for 0.25 seconds to avoid Cloudflare rate limiting (error 1015)
+  # This allows ~4 requests per second, well under Modrinth's rate limits
+  sleep 0.25
+}
+
 calculate_sha1() {
   local file="$1"
   if command -v sha1sum >/dev/null 2>&1; then
@@ -330,10 +336,6 @@ get_manual_override() {
     #   echo "https://mediafilez.forgecdn.net/files/5640/518/ars_elemental-1.21.1-0.7.4.1.jar"
     #   return 0
     #   ;;
-    "curios-neoforge-9.5.1+1.21.1.jar")
-      echo "https://cdn.modrinth.com/data/vvuO3ImH/versions/yohfFbgD/curios-neoforge-9.5.1%2B1.21.1.jar"
-      return 0
-      ;;
   esac
   
   # Check config file
@@ -466,6 +468,12 @@ get_manual_environment_override() {
         return
     fi
     
+    # Carry On - requires server-side support for network channels
+    if [[ "$mod_name" == *"carryon"* ]] || [[ "$mod_name" == *"carry_on"* ]]; then
+        echo "both"
+        return
+    fi
+    
     # Essential library mods that must be available to both client and server
     if [[ "$mod_name" == *"bookshelf"* ]]; then
         echo "both"
@@ -484,6 +492,10 @@ get_manual_environment_override() {
         return
     fi
     if [[ "$mod_name" == *"geckolib"* ]]; then
+        echo "both"
+        return
+    fi
+    if [[ "$mod_name" == *"glitchcore"* ]]; then
         echo "both"
         return
     fi
@@ -617,6 +629,7 @@ get_latest_version() {
   # Check Modrinth releases
   LATEST_MODRINTH_VERSION=""
   if command -v curl >/dev/null 2>&1; then
+    api_rate_limit
     local modrinth_versions=$(curl -s "https://api.modrinth.com/v2/project/$MODRINTH_PROJECT/version" 2>/dev/null || echo "")
     if [ -n "$modrinth_versions" ] && echo "$modrinth_versions" | jq -e '.[0]' >/dev/null 2>&1; then
       LATEST_MODRINTH_VERSION=$(echo "$modrinth_versions" | jq -r '.[0].version_number' 2>/dev/null || echo "")
@@ -759,11 +772,11 @@ get_latest_neoforge_version() {
     
     if [ -n "$neoforge_versions" ]; then
       # Find the latest version for our Minecraft version
-      local latest_version=$(echo "$neoforge_versions" | jq -r "
+      local latest_version=$(echo "$neoforge_versions" | jq -r '
         .versions[] | 
-        select(.minecraft_version == \"$MINECRAFT_VERSION\") | 
-        select(.channel == \"release\") | 
-        .version" | sort -V | tail -1)
+        select(.minecraft_version == "'"$MINECRAFT_VERSION"'") | 
+        select(.channel == "release") | 
+        .version' | sort -V | tail -1)
       
       if [ -n "$latest_version" ] && [ "$latest_version" != "null" ]; then
         echo "+ Latest NeoForge version: $latest_version"
@@ -786,23 +799,30 @@ search_modrinth_by_name() {
   local base_name=$(echo "$filename" | sed 's/\.jar$//' | sed 's/-[0-9].*$//' | sed 's/_/ /g')
   
   # Try exact name search
+  api_rate_limit
   local search_result=$(curl -s "https://api.modrinth.com/v2/search?query=$(echo "$base_name" | sed 's/ /%20/g')&limit=10" 2>/dev/null || echo "")
   
   if echo "$search_result" | jq -e '.hits[0]' >/dev/null 2>&1; then
     local project_id=$(echo "$search_result" | jq -r '.hits[0].project_id')
     
     # Get versions for this project
+    api_rate_limit
     local versions=$(curl -s "https://api.modrinth.com/v2/project/$project_id/version" 2>/dev/null || echo "")
+    
+    # Validate that versions is valid JSON array
+    if ! echo "$versions" | jq -e 'type == "array"' >/dev/null 2>&1; then
+      return 1
+    fi
     
     # Try to find matching version for our specific NeoForge and Minecraft version
     local matching_url=""
     
     # First priority: exact Minecraft version + NeoForge loader
-    matching_url=$(echo "$versions" | jq -r "
+    matching_url=$(echo "$versions" | jq -r '
       .[] | 
-      select(.loaders[] | contains(\"neoforge\")) | 
-      select(.game_versions[] | contains(\"$MINECRAFT_VERSION\")) | 
-      .files[0].url" | head -1)
+      select(.loaders[]? | contains("neoforge")) | 
+      select(.game_versions[]? | contains("'"$MINECRAFT_VERSION"'")) | 
+      .files[0].url' | head -1)
     
     if [ -n "$matching_url" ] && [ "$matching_url" != "null" ]; then
       echo "$matching_url"
@@ -810,11 +830,11 @@ search_modrinth_by_name() {
     fi
     
     # Second priority: any NeoForge version for our Minecraft version
-    matching_url=$(echo "$versions" | jq -r "
+    matching_url=$(echo "$versions" | jq -r '
       .[] | 
-      select(.loaders[] | contains(\"neoforge\")) | 
-      select(.game_versions[] | test(\"1\\.21\")) | 
-      .files[0].url" | head -1)
+      select(.loaders[]? | contains("neoforge")) | 
+      select(.game_versions[]? | test("1\\.21")) | 
+      .files[0].url' | head -1)
     
     if [ -n "$matching_url" ] && [ "$matching_url" != "null" ]; then
       echo "$matching_url"
@@ -822,49 +842,11 @@ search_modrinth_by_name() {
     fi
     
     # Fallback to any NeoForge version
-    local fallback_url=$(echo "$versions" | jq -r '.[] | select(.loaders[] | contains("neoforge")) | .files[0].url' | head -1)
+    local fallback_url=$(echo "$versions" | jq -r '.[]? | select(.loaders[]? | contains("neoforge")) | .files[0].url' | head -1)
     if [ -n "$fallback_url" ] && [ "$fallback_url" != "null" ]; then
       echo "$fallback_url"
       return 0
     fi
-  fi
-  
-  return 1
-}
-
-# Search CurseForge by filename (no API key needed)
-search_curseforge_by_name() {
-  local filename="$1"
-  local base_name=$(echo "$filename" | sed 's/\.jar$//' | sed 's/-[0-9].*$//' | sed 's/_/ /g' | tr '[:upper:]' '[:lower:]')
-  
-  # Known CurseForge project mappings for common mods
-  local known_projects=""
-  case "$base_name" in
-    *"ars elemental"*|*"ars_elemental"*) known_projects="ars-elemental" ;;
-    *"create"*) known_projects="create" ;;
-    *"jei"*) known_projects="jei" ;;
-    *"jade"*) known_projects="jade" ;;
-    *"waystones"*) known_projects="waystones" ;;
-    *"iron chest"*|*"ironchest"*) known_projects="iron-chests" ;;
-    *"thermal foundation"*) known_projects="thermal-foundation" ;;
-    *"thermal expansion"*) known_projects="thermal-expansion" ;;
-    *"cofh core"*) known_projects="cofh-core" ;;
-    *"redstone arsenal"*) known_projects="redstone-arsenal" ;;
-  esac
-  
-  if [ -n "$known_projects" ]; then
-    # Try to find the latest file for this project
-    local project_url="https://www.curseforge.com/minecraft/mc-mods/$known_projects"
-    echo "- Checking CurseForge project: $known_projects" >&2
-    
-    # This is a simplified approach - in a real implementation you'd scrape the page
-    # For now, we'll construct likely download URLs based on known patterns
-    local likely_url="https://www.curseforge.com/minecraft/mc-mods/$known_projects/files"
-    echo "Found potential CurseForge project: $likely_url" >&2
-    
-    # Return a placeholder that indicates we found the project but need manual intervention
-    echo "CURSEFORGE_PROJECT:$known_projects"
-    return 0
   fi
   
   return 1
@@ -884,7 +866,16 @@ lookup_mod_with_mirrors() {
   fi
   
   # 2. Try Modrinth hash-based lookup (most reliable)
-  local modrinth_result=$(curl -s "https://api.modrinth.com/v2/version_file/$file_hash" 2>/dev/null || echo "")
+  api_rate_limit
+  local modrinth_result=$(curl -s "https://api.modrinth.com/v2/version_file/$file_hash?algorithm=sha1" 2>/dev/null || echo "")
+  
+  # Check for rate limiting (Cloudflare error 1015)
+  if echo "$modrinth_result" | grep -q "error code: 1015"; then
+    # Rate limited - wait longer and retry once
+    sleep 3
+    modrinth_result=$(curl -s "https://api.modrinth.com/v2/version_file/$file_hash?algorithm=sha1" 2>/dev/null || echo "")
+  fi
+  
   if [ -n "$modrinth_result" ] && echo "$modrinth_result" | jq -e '.files[0].url' >/dev/null 2>&1; then
     local modrinth_url=$(echo "$modrinth_result" | jq -r '.files[0].url')
     if [ -n "$modrinth_url" ] && [ "$modrinth_url" != "null" ]; then
@@ -900,14 +891,7 @@ lookup_mod_with_mirrors() {
     return 0
   fi
   
-  # 4. Try CurseForge search
-  local cf_search_url=$(search_curseforge_by_name "$filename")
-  if [ $? -eq 0 ] && [ -n "$cf_search_url" ]; then
-    echo "FOUND|curseforge-search|$cf_search_url|"
-    return 0
-  fi
-  
-  # 5. If all lookups fail, check strict mode
+  # 4. If all lookups fail, check strict mode
   if [ "$STRICT_EXTERNAL_DOWNLOADS" = "true" ]; then
     echo "FAILED|not-found|$filename|"
     FAILED_LOOKUPS+=("$filename")
@@ -947,6 +931,7 @@ lookup_mod_with_validation() {
         if [[ "$download_url" == *"cdn.modrinth.com"* ]]; then
             local version_id=$(echo "$download_url" | sed 's/.*\/versions\/\([^\/]*\)\/.*/\1/')
             if [ -n "$version_id" ]; then
+                api_rate_limit
                 local version_info=$(curl -s "https://api.modrinth.com/v2/version/$version_id" 2>/dev/null || echo "")
                 if [ -n "$version_info" ]; then
                     expected_hash=$(echo "$version_info" | jq -r '.files[0].hashes.sha1' 2>/dev/null || echo "")
@@ -1112,9 +1097,6 @@ generate_manifest() {
       "modrinth-hash"|"modrinth-search")
         MODRINTH_FOUND=$((MODRINTH_FOUND + 1))
         ;;
-      "curseforge-search")
-        CURSEFORGE_FOUND=$((CURSEFORGE_FOUND + 1))
-        ;;
       "not-found"|"dependency-safety")
         PACK_INCLUDED=$((PACK_INCLUDED + 1))
         ;;
@@ -1259,8 +1241,9 @@ create_mrpack() {
     fi
   done
   
-  # Copy server list for community servers (Modrinth App handles this well)
+  # Copy server list for community servers
   if [ -f "servers.dat" ]; then
+    mkdir -p "$temp_dir/overrides"
     cp "servers.dat" "$temp_dir/overrides/servers.dat"
     echo "  + servers.dat → overrides/servers.dat (community servers)"
   fi
@@ -1357,13 +1340,13 @@ create_mrpack() {
   if [ "$options_present" -eq 1 ]; then
     echo "  ✅ options.txt found in overrides/"
   else
-    echo "  ❌ options.txt MISSING from overrides/"
+    echo "  [!] options.txt MISSING from overrides/"
   fi
   
   if [ "$servers_present" -eq 1 ]; then
     echo "  ✅ servers.dat found in overrides/"
   else
-    echo "  ❌ servers.dat MISSING from overrides/"
+    echo "  [!] servers.dat MISSING from overrides/"
   fi
   
   # Clean up
@@ -1376,6 +1359,50 @@ create_mrpack() {
 # ==================== CHANGELOG GENERATION ====================
 
 # Generate detailed changelog based on detected changes
+# Helper function to extract mod name and version from filename
+extract_mod_info() {
+  local filename="$1"
+  local base_name=$(echo "$filename" | sed 's/\.jar$//')
+  
+  # Try to extract mod name and version
+  # Common patterns: modname-1.2.3.jar, modname_1.2.3.jar, modname-neoforge-1.2.3.jar
+  local mod_name=""
+  local mod_version=""
+  
+  # Extract version (look for pattern like 1.2.3 or 1.21.1-1.2.3)
+  if [[ "$base_name" =~ ([0-9]+\.[0-9]+(\.[0-9]+)?(\+|-|_)?[a-zA-Z0-9\.-]*) ]]; then
+    mod_version="${BASH_REMATCH[1]}"
+    # Get everything before the version as the mod name
+    mod_name=$(echo "$base_name" | sed "s/-${mod_version}$//" | sed "s/_${mod_version}$//" | sed "s/${mod_version}$//")
+  else
+    mod_name="$base_name"
+    mod_version="unknown"
+  fi
+  
+  # Clean up mod name
+  mod_name=$(echo "$mod_name" | sed 's/[-_]neoforge$//' | sed 's/[-_]forge$//' | sed 's/[-_]fabric$//')
+  
+  echo "$mod_name|$mod_version"
+}
+
+# Helper function to compare two mod filenames and detect if they're the same mod
+is_same_mod() {
+  local file1="$1"
+  local file2="$2"
+  
+  local info1=$(extract_mod_info "$file1")
+  local info2=$(extract_mod_info "$file2")
+  
+  local name1=$(echo "$info1" | cut -d'|' -f1)
+  local name2=$(echo "$info2" | cut -d'|' -f1)
+  
+  # Normalize names for comparison
+  name1=$(echo "$name1" | tr '[:upper:]' '[:lower:]' | sed 's/[-_]//g')
+  name2=$(echo "$name2" | tr '[:upper:]' '[:lower:]' | sed 's/[-_]//g')
+  
+  [[ "$name1" == "$name2" ]]
+}
+
 generate_changelog() {
   local change_type="$1"
   local base_version="$2"
@@ -1396,9 +1423,9 @@ generate_changelog() {
     echo "- Analyzing mod changes..."
     
     # Detect mod changes by comparing current mods with git history
-    local added_mods=()
-    local removed_mods=()
-    local updated_mods=()
+    declare -A added_mods
+    declare -A removed_mods
+    declare -A updated_mods
     
     # Get previous mod list from git
     local prev_mods=""
@@ -1408,46 +1435,108 @@ generate_changelog() {
     
     local current_mods=$(find mods -name "*.jar" -type f -exec basename {} \; | sort)
     
-    # Find added mods
-    if [ -n "$prev_mods" ]; then
-      while IFS= read -r mod; do
-        if [ -n "$mod" ] && ! echo "$prev_mods" | grep -Fxq "$mod"; then
-          added_mods+=("$mod")
-        fi
-      done <<< "$current_mods"
+    # Build associative arrays for easier lookup
+    declare -A prev_mod_map
+    declare -A current_mod_map
+    
+    # Map previous mods by normalized name
+    while IFS= read -r mod; do
+      if [ -n "$mod" ]; then
+        local info=$(extract_mod_info "$mod")
+        local name=$(echo "$info" | cut -d'|' -f1)
+        local version=$(echo "$info" | cut -d'|' -f2)
+        local norm_name=$(echo "$name" | tr '[:upper:]' '[:lower:]' | sed 's/[-_]//g')
+        prev_mod_map["$norm_name"]="$mod|$name|$version"
+      fi
+    done <<< "$prev_mods"
+    
+    # Map current mods by normalized name
+    while IFS= read -r mod; do
+      if [ -n "$mod" ]; then
+        local info=$(extract_mod_info "$mod")
+        local name=$(echo "$info" | cut -d'|' -f1)
+        local version=$(echo "$info" | cut -d'|' -f2)
+        local norm_name=$(echo "$name" | tr '[:upper:]' '[:lower:]' | sed 's/[-_]//g')
+        current_mod_map["$norm_name"]="$mod|$name|$version"
+      fi
+    done <<< "$current_mods"
+    
+    # Find added, removed, and updated mods
+    for norm_name in "${!current_mod_map[@]}"; do
+      local current_info="${current_mod_map[$norm_name]}"
+      local current_file=$(echo "$current_info" | cut -d'|' -f1)
+      local current_name=$(echo "$current_info" | cut -d'|' -f2)
+      local current_version=$(echo "$current_info" | cut -d'|' -f3)
       
-      # Find removed mods
-      while IFS= read -r mod; do
-        if [ -n "$mod" ] && ! echo "$current_mods" | grep -Fxq "$mod"; then
-          removed_mods+=("$mod")
+      if [ -z "${prev_mod_map[$norm_name]}" ]; then
+        # New mod
+        added_mods["$current_name"]="$current_version|$current_file"
+      else
+        # Check if version changed
+        local prev_info="${prev_mod_map[$norm_name]}"
+        local prev_file=$(echo "$prev_info" | cut -d'|' -f1)
+        local prev_version=$(echo "$prev_info" | cut -d'|' -f3)
+        
+        if [ "$current_version" != "$prev_version" ]; then
+          updated_mods["$current_name"]="$prev_version|$current_version|$current_file"
         fi
-      done <<< "$prev_mods"
-    fi
+      fi
+    done
+    
+    # Find removed mods
+    for norm_name in "${!prev_mod_map[@]}"; do
+      if [ -z "${current_mod_map[$norm_name]}" ]; then
+        local prev_info="${prev_mod_map[$norm_name]}"
+        local prev_name=$(echo "$prev_info" | cut -d'|' -f2)
+        local prev_version=$(echo "$prev_info" | cut -d'|' -f3)
+        local prev_file=$(echo "$prev_info" | cut -d'|' -f1)
+        removed_mods["$prev_name"]="$prev_version|$prev_file"
+      fi
+    done
     
     # Generate mod changelog
     detailed_changelog="${detailed_changelog}MOD CHANGES\n\n"
-    short_changelog="Updated modpack with mod changes"
+    
+    local change_count=0
+    change_count=$((${#added_mods[@]} + ${#removed_mods[@]} + ${#updated_mods[@]}))
+    
+    if [ $change_count -eq 0 ]; then
+      short_changelog="No mod changes"
+    else
+      short_changelog="${#added_mods[@]} added, ${#updated_mods[@]} updated, ${#removed_mods[@]} removed"
+    fi
     
     if [ ${#added_mods[@]} -gt 0 ]; then
-      detailed_changelog="${detailed_changelog}Added Mods:\n"
-      short_changelog="Added ${#added_mods[@]} new mod(s)"
-      for mod in "${added_mods[@]}"; do
-        local mod_name=$(echo "$mod" | sed 's/\.jar$//' | sed 's/-[0-9].*$//' | sed 's/_/ /g' | sed 's/\b\w/\U&/g')
-        detailed_changelog="${detailed_changelog}- $mod_name ($mod)\n"
+      detailed_changelog="${detailed_changelog}Added Mods (${#added_mods[@]}):\n"
+      for mod_name in $(echo "${!added_mods[@]}" | tr ' ' '\n' | sort); do
+        local mod_info="${added_mods[$mod_name]}"
+        local mod_version=$(echo "$mod_info" | cut -d'|' -f1)
+        local mod_file=$(echo "$mod_info" | cut -d'|' -f2)
+        local display_name=$(echo "$mod_name" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2));}1')
+        detailed_changelog="${detailed_changelog}- $display_name v$mod_version\n"
+      done
+      detailed_changelog="${detailed_changelog}\n"
+    fi
+    
+    if [ ${#updated_mods[@]} -gt 0 ]; then
+      detailed_changelog="${detailed_changelog}Updated Mods (${#updated_mods[@]}):\n"
+      for mod_name in $(echo "${!updated_mods[@]}" | tr ' ' '\n' | sort); do
+        local mod_info="${updated_mods[$mod_name]}"
+        local old_version=$(echo "$mod_info" | cut -d'|' -f1)
+        local new_version=$(echo "$mod_info" | cut -d'|' -f2)
+        local display_name=$(echo "$mod_name" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2));}1')
+        detailed_changelog="${detailed_changelog}- $display_name: v$old_version → v$new_version\n"
       done
       detailed_changelog="${detailed_changelog}\n"
     fi
     
     if [ ${#removed_mods[@]} -gt 0 ]; then
-      detailed_changelog="${detailed_changelog}Removed Mods:\n"
-      if [ ${#added_mods[@]} -gt 0 ]; then
-        short_changelog="$short_changelog, removed ${#removed_mods[@]} mod(s)"
-      else
-        short_changelog="Removed ${#removed_mods[@]} mod(s)"
-      fi
-      for mod in "${removed_mods[@]}"; do
-        local mod_name=$(echo "$mod" | sed 's/\.jar$//' | sed 's/-[0-9].*$//' | sed 's/_/ /g' | sed 's/\b\w/\U&/g')
-        detailed_changelog="${detailed_changelog}- $mod_name ($mod)\n"
+      detailed_changelog="${detailed_changelog}Removed Mods (${#removed_mods[@]}):\n"
+      for mod_name in $(echo "${!removed_mods[@]}" | tr ' ' '\n' | sort); do
+        local mod_info="${removed_mods[$mod_name]}"
+        local mod_version=$(echo "$mod_info" | cut -d'|' -f1)
+        local display_name=$(echo "$mod_name" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2));}1')
+        detailed_changelog="${detailed_changelog}- $display_name v$mod_version\n"
       done
       detailed_changelog="${detailed_changelog}\n"
     fi
@@ -1503,7 +1592,7 @@ generate_changelog() {
   detailed_changelog="${detailed_changelog}- Server-Only Mods: $SERVER_ONLY_MOD_COUNT\n"
   detailed_changelog="${detailed_changelog}- Minecraft Version: $MINECRAFT_VERSION\n"
   detailed_changelog="${detailed_changelog}- NeoForge Version: $NEOFORGE_VERSION\n"
-  detailed_changelog="${detailed_changelog}- External Downloads: $((MODRINTH_FOUND + CURSEFORGE_FOUND + MANUAL_OVERRIDES_USED)) of $TOTAL_MODS ($(( (MODRINTH_FOUND + CURSEFORGE_FOUND + MANUAL_OVERRIDES_USED) * 100 / TOTAL_MODS ))%)\n"
+  detailed_changelog="${detailed_changelog}- External Downloads: $((MODRINTH_FOUND + MANUAL_OVERRIDES_USED)) of $TOTAL_MODS ($(( (MODRINTH_FOUND + MANUAL_OVERRIDES_USED) * 100 / TOTAL_MODS ))%)\n"
   detailed_changelog="${detailed_changelog}- Pack Size: Optimized with external downloads\n"
   detailed_changelog="${detailed_changelog}- Server Compatibility: Dedicated servers will automatically exclude client-only mods\n\n"
   
@@ -1554,7 +1643,6 @@ print_statistics() {
   echo "────────────────────"
   echo "Total mods processed: $TOTAL_MODS"
   echo "Modrinth downloads: $MODRINTH_FOUND"
-  echo "CurseForge downloads: $CURSEFORGE_FOUND"
   echo "Manual overrides used: $MANUAL_OVERRIDES_USED"
   echo "Included in pack: $PACK_INCLUDED"
   echo ""
@@ -1565,7 +1653,7 @@ print_statistics() {
   echo ""
   
   if [ $TOTAL_MODS -gt 0 ]; then
-    local external_downloads=$((MODRINTH_FOUND + CURSEFORGE_FOUND + MANUAL_OVERRIDES_USED))
+    local external_downloads=$((MODRINTH_FOUND + MANUAL_OVERRIDES_USED))
     local coverage=$((external_downloads * 100 / TOTAL_MODS))
     echo "External download coverage: $coverage%"
     echo "Pack size reduction: ~$((100 - (PACK_INCLUDED * 100 / TOTAL_MODS)))%"
@@ -1637,7 +1725,6 @@ main() {
     echo "- To fix this, you can:"
     echo "   1. Add manual overrides for these mods in mod_overrides.conf"
     echo "   2. Set STRICT_EXTERNAL_DOWNLOADS=false to include them in the pack"
-    echo "   3. Set up a CurseForge API key for better CurseForge search"
     echo ""
     exit 1
   fi
@@ -1674,7 +1761,7 @@ main() {
   echo "- Primary target: Modrinth App (optimized structure)"
   echo "- Also compatible with: PrismLauncher, MultiMC, and other launchers"
   echo "- Server compatibility: Client-only mods automatically excluded from dedicated servers"
-  echo "- Mod lookup order: Manual overrides → Modrinth hash → Modrinth search → CurseForge search → Include in pack"
+  echo "- Mod lookup order: Manual overrides → Modrinth hash → Modrinth search → Include in pack"
   echo "- Update policy: Use './tools/wave-based-update.sh' for safe dependency-aware mod updates"
   echo "- Shader configuration: Pre-configured for MakeUp-UltraFast shaders with 3x GUI scale"
   echo ""
@@ -1689,7 +1776,7 @@ main() {
   echo "2. Upload to GitHub releases"
   echo "3. Push to Modrinth for distribution"
   echo ""
-  echo "📋 If options.txt or servers.dat are not recognized by the launcher:"
+  echo "Note: If options.txt or servers.dat are not recognized by the launcher:"
   echo "1. Check docs/TROUBLESHOOTING.md for debugging steps"
   echo "2. Try with a different launcher (PrismLauncher) to isolate the issue"
   echo "3. Report to Modrinth support if the issue persists"

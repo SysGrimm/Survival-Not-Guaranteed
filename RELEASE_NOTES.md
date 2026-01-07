@@ -9,7 +9,7 @@
 - **✅ Environment Conflicts**: Corrected client/server mod classification issues
 - **✅ Compatibility Issues**: Updated mod versions to ensure proper inter-mod compatibility
 
-## 📋 Technical Details
+## Technical Details
 - **Total Mods**: 143 (100% external downloads)
 - **Universal Mods**: 130 (client + server)
 - **Client-Only Mods**: 10 (automatically excluded from servers)
