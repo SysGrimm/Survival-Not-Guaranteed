@@ -1275,7 +1275,11 @@ create_mrpack() {
   done
   
   # Copy server list for community servers
-  if [ -f "servers.dat" ]; then
+  if [ -f "client-overrides/servers.dat" ]; then
+    mkdir -p "$temp_dir/overrides"
+    cp "client-overrides/servers.dat" "$temp_dir/overrides/servers.dat"
+    echo "  + client-overrides/servers.dat → overrides/servers.dat (community servers)"
+  elif [ -f "servers.dat" ]; then
     mkdir -p "$temp_dir/overrides"
     cp "servers.dat" "$temp_dir/overrides/servers.dat"
     echo "  + servers.dat → overrides/servers.dat (community servers)"

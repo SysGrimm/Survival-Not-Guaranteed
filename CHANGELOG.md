@@ -1,7 +1,7 @@
-Survival Not Guaranteed v3.15.1
+Survival Not Guaranteed v3.16.0
 
 Release Date: January 10, 2026
-Previous Version: 3.15.1
+Previous Version: 3.16.0
 
 OTHER CHANGES
 
