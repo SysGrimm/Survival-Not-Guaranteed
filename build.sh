@@ -32,7 +32,7 @@ MODLOADER="neoforge"
 NEOFORGE_VERSION="21.1.215"
 
 # Project configuration for version checking
-GITHUB_REPO="Manifesto2147/Survival-Not-Guaranteed"
+GITHUB_REPO="SysGrimm/Survival-Not-Guaranteed"
 MODRINTH_PROJECT="${MODRINTH_PROJECT:-survival-not-guaranteed}"  # Set this to your actual Modrinth project slug
 
 # Auto-detect latest compatible NeoForge version if needed
@@ -278,9 +278,9 @@ get_mod_environment() {
 
 # API rate limiting - add small delay between calls
 api_rate_limit() {
-  # Sleep for 0.25 seconds to avoid Cloudflare rate limiting (error 1015)
-  # This allows ~4 requests per second, well under Modrinth's rate limits
-  sleep 0.25
+  # Sleep for 0.5 seconds to avoid Modrinth rate limiting (error 1015)
+  # This allows ~2 requests per second, well under Modrinth's rate limits
+  sleep 0.5
 }
 
 calculate_sha1() {
@@ -436,6 +436,12 @@ get_manual_environment_override() {
         return
     fi
     if [[ "$mod_name" == *"waystones"* ]]; then
+        echo "both"
+        return
+    fi
+    
+    # Inventory Profiles Next - libIPN is required on both client and server
+    if [[ "$mod_name" == *"libipn"* ]]; then
         echo "both"
         return
     fi
@@ -856,7 +862,7 @@ search_modrinth_by_name() {
 lookup_mod_with_mirrors() {
   local file="$1"
   local filename=$(basename "$file")
-  local file_hash=$(calculate_sha1 "$file")
+  local file_hash=$(calculate_sha512 "$file")
   
   # 1. Check manual overrides first
   local manual_url=$(get_manual_override "$filename")
@@ -865,24 +871,51 @@ lookup_mod_with_mirrors() {
     return 0
   fi
   
-  # 2. Try Modrinth hash-based lookup (most reliable)
-  api_rate_limit
-  local modrinth_result=$(curl -s "https://api.modrinth.com/v2/version_file/$file_hash?algorithm=sha1" 2>/dev/null || echo "")
+  # 2. Try Modrinth hash-based lookup (most reliable) with retry logic
+  local modrinth_result=""
+  local retry_count=0
+  local max_retries=5
   
-  # Check for rate limiting (Cloudflare error 1015)
-  if echo "$modrinth_result" | grep -q "error code: 1015"; then
-    # Rate limited - wait longer and retry once
-    sleep 3
-    modrinth_result=$(curl -s "https://api.modrinth.com/v2/version_file/$file_hash?algorithm=sha1" 2>/dev/null || echo "")
-  fi
-  
-  if [ -n "$modrinth_result" ] && echo "$modrinth_result" | jq -e '.files[0].url' >/dev/null 2>&1; then
-    local modrinth_url=$(echo "$modrinth_result" | jq -r '.files[0].url')
-    if [ -n "$modrinth_url" ] && [ "$modrinth_url" != "null" ]; then
-      echo "FOUND|modrinth-hash|$modrinth_url|"
-      return 0
+  while [ $retry_count -lt $max_retries ]; do
+    api_rate_limit
+    modrinth_result=$(curl -s --max-time 20 --connect-timeout 10 "https://api.modrinth.com/v2/version_file/$file_hash?algorithm=sha512" 2>/dev/null || echo "")
+    
+    # Check for rate limiting (Cloudflare error 1015)
+    if echo "$modrinth_result" | grep -q "error code: 1015"; then
+      retry_count=$((retry_count + 1))
+      if [ $retry_count -lt $max_retries ]; then
+        sleep $((retry_count * 2))
+        continue
+      fi
     fi
-  fi
+    
+    # Check if we got a valid result with file URL
+    if [ -n "$modrinth_result" ] && echo "$modrinth_result" | jq -e '.files[0].url' >/dev/null 2>&1; then
+      local modrinth_url=$(echo "$modrinth_result" | jq -r '.files[0].url')
+      if [ -n "$modrinth_url" ] && [ "$modrinth_url" != "null" ]; then
+        echo "FOUND|modrinth-hash|$modrinth_url|"
+        return 0
+      fi
+    fi
+    
+    # Check if result is an error (not found, etc.)
+    if [ -n "$modrinth_result" ] && echo "$modrinth_result" | jq -e '.error' >/dev/null 2>&1; then
+      # API returned an error (like "not_found"), don't retry, move to fallback
+      break
+    fi
+    
+    # If result was empty or invalid, retry
+    if [ -z "$modrinth_result" ] || [ "$modrinth_result" = "{}" ]; then
+      retry_count=$((retry_count + 1))
+      if [ $retry_count -lt $max_retries ]; then
+        sleep $((retry_count * 2))
+        continue
+      fi
+    fi
+    
+    # Result was non-empty but didn't have what we need, break out
+    break
+  done
   
   # 3. Try Modrinth name-based search
   local modrinth_search_url=$(search_modrinth_by_name "$filename")
@@ -908,7 +941,7 @@ lookup_mod_with_mirrors() {
 lookup_mod_with_validation() {
     local file="$1"
     local filename=$(basename "$file")
-    local file_hash=$(calculate_sha1 "$file")
+    local file_hash=$(calculate_sha512 "$file")
     
     # Try the regular lookup
     local lookup_result=$(lookup_mod_with_mirrors "$file")
@@ -1231,7 +1264,7 @@ create_mrpack() {
   fi
   
   # Copy other assets to overrides/ for Modrinth App compatibility
-  for dir in scripts shaderpacks resourcepacks datapacks; do
+  for dir in kubejs scripts shaderpacks resourcepacks datapacks; do
     if [ -d "minecraft/$dir" ] && [ "$(ls -A "minecraft/$dir" 2>/dev/null)" ]; then
       cp -r "minecraft/$dir" "$temp_dir/overrides/"
       echo "  + minecraft/$dir/ → overrides/$dir/ (Modrinth App optimized)"

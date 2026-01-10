@@ -1,0 +1,31 @@
+# Complementary Reimagined - Ultra Quality Preset
+# Automatically sets maximum visual quality for stunning graphics
+
+# Set to ULTRA profile for maximum visual quality
+profile=ULTRA
+
+# These settings are automatically applied by the ULTRA profile:
+# - SHADOW_QUALITY=4 (highest shadow resolution)
+# - shadowDistance=256.0 (maximum shadow distance)
+# - WATER_REFLECT_QUALITY=2 (full water reflections)
+# - BLOCK_REFLECT_QUALITY=3 (highest block reflections)
+# - LIGHTSHAFT_QUALI_DEFINE=3 (maximum god rays/volumetric lighting)
+# - SSAO_QUALI_DEFINE=2 (ambient occlusion)
+# - FXAA_DEFINE=1 (anti-aliasing)
+# - DETAIL_QUALITY=3 (maximum detail)
+# - CLOUD_QUALITY=3 (highest cloud quality)
+# - ANISOTROPIC_FILTER=8 (8x anisotropic filtering)
+# - COLORED_LIGHTING=512 (colored lighting voxels)
+# - WORLD_SPACE_REFLECTIONS=1 (screen space reflections)
+# - ENTITY_SHADOW=1 (entity shadows enabled)
+
+# Additional visual enhancements
+BLOOM_ENABLED=true
+BLOOM_STRENGTH=0.07
+NIGHT_NEBULAE=1
+AURORA_CONDITION=1
+RAINBOWS=1
+VIGNETTE_R=0.35
+IMAGE_SHARPENING=0.1
+MOTION_BLUR_EFFECT=false
+TAA_MODE=1

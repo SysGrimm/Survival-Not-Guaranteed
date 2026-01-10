@@ -27,10 +27,12 @@ MINECRAFT_VERSION="1.21.1"
 LOADER_TYPE="neoforge"
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODS_DIR="$BASE_DIR/mods"
+SHADERS_DIR="$BASE_DIR/shaderpacks"
+RESOURCEPACKS_DIR="$BASE_DIR/resourcepacks"
 DRY_RUN="${DRY_RUN:-true}"
 PINNED_FILE="$MODS_DIR/.pinned"
 
-# Data structures
+# Data structures for mods
 declare -A MOD_INFO                    # filename -> project_id:current_version:latest_version:mod_name:current_version_id:latest_version_id
 declare -A PROJECT_TO_FILE             # project_id -> filename
 declare -A VERSION_ID_TO_NUMBER        # version_id -> version_number
@@ -39,6 +41,12 @@ declare -A MOD_LATEST_DEPS             # project_id -> semicolon-separated "dep_
 declare -A UPDATE_SAFETY               # project_id -> "safe" | "unsafe:reason"
 declare -A MISSING_DEPS_TO_DOWNLOAD=() # project_id -> "latest_version"
 declare -A PINNED_MODS=()              # project_id -> "version:reason"
+
+# Data structures for shaders and resource packs
+declare -A SHADER_INFO                 # filename -> project_id:current_version:latest_version:name:current_version_id:latest_version_id
+declare -A RESOURCEPACK_INFO           # filename -> project_id:current_version:latest_version:name:current_version_id:latest_version_id
+declare -A SHADER_PROJECT_TO_FILE      # project_id -> filename
+declare -A RESOURCEPACK_PROJECT_TO_FILE # project_id -> filename
 
 # Wave arrays
 declare -a WAVE_1_INDEPENDENT=()
@@ -52,6 +60,10 @@ FOUND_MODS=0
 SAFE_UPDATES=0
 UNSAFE_UPDATES=0
 CURRENT_MODS=0
+TOTAL_SHADERS=0
+TOTAL_RESOURCEPACKS=0
+SHADER_UPDATES=0
+RESOURCEPACK_UPDATES=0
 
 echo ""
 log_info "═══════════════════════════════════════════════════════════════"
@@ -213,6 +225,127 @@ done
 
 printf "\n\n"
 log_success "Found $FOUND_MODS mods on Modrinth"
+echo ""
+
+# Phase 1b: Scan shaders
+log_info "Phase 1b: Scanning shader packs..."
+echo ""
+
+if [[ -d "$SHADERS_DIR" ]]; then
+    for shader_file in "$SHADERS_DIR"/*.zip; do
+        [[ ! -f "$shader_file" ]] && continue
+        
+        TOTAL_SHADERS=$((TOTAL_SHADERS + 1))
+        filename=$(basename "$shader_file")
+        printf "\r[%d] Scanning: %s" "$TOTAL_SHADERS" "$filename"
+        
+        # Calculate hash
+        shader_hash=$(sha1sum "$shader_file" | cut -d' ' -f1)
+        
+        # Query Modrinth by hash (with retry logic)
+        response=""
+        for retry in {1..5}; do
+            response=$(curl -s --max-time 20 --connect-timeout 10 "https://api.modrinth.com/v2/version_file/$shader_hash?algorithm=sha1" 2>/dev/null || echo "")
+            if [[ -n "$response" ]] && echo "$response" | jq -e '.project_id' >/dev/null 2>&1; then
+                break
+            fi
+            if [[ $retry -lt 5 ]]; then
+                printf "\r[RETRY] Hash lookup attempt %d failed, retrying...\n" "$retry"
+                sleep $((retry * 2))
+            fi
+        done
+        
+        if [[ -n "$response" ]] && echo "$response" | jq -e '.project_id' >/dev/null 2>&1; then
+            project_id=$(echo "$response" | jq -r '.project_id')
+            current_version=$(echo "$response" | jq -r '.version_number')
+            current_version_id=$(echo "$response" | jq -r '.id')
+            shader_name=$(echo "$response" | jq -r '.name')
+            
+            printf "\r[DEBUG] Hash lookup success: %s | Project: %s | Version: %s\n" "$filename" "$project_id" "$current_version"
+            
+            # Get latest version (with retry logic)
+            versions_response="[]"
+            for retry in {1..5}; do
+                versions_response=$(curl -s --max-time 20 --connect-timeout 10 "https://api.modrinth.com/v2/project/$project_id/version" 2>/dev/null || echo "[]")
+                if [[ "$versions_response" != "[]" ]] && echo "$versions_response" | jq -e '.[0]' >/dev/null 2>&1; then
+                    break
+                fi
+                if [[ $retry -lt 5 ]]; then
+                    printf "\r[RETRY] Versions API attempt %d failed, retrying...\n" "$retry"
+                    sleep $((retry * 2))
+                fi
+            done
+            
+            printf "\r[DEBUG] Versions API response length: %d chars\n" "${#versions_response}"
+            
+            if [[ "$versions_response" != "[]" ]] && echo "$versions_response" | jq -e '.[0]' >/dev/null 2>&1; then
+                latest_version=$(echo "$versions_response" | jq -r '.[0].version_number')
+                latest_version_id=$(echo "$versions_response" | jq -r '.[0].id')
+                
+                printf "\r[DEBUG] Shader: %s | Current: '%s' | Latest: '%s' | Equal: %s\n" "$shader_name" "$current_version" "$latest_version" "$([[ "$current_version" == "$latest_version" ]] && echo "YES" || echo "NO")"
+                
+                SHADER_INFO[$filename]="$project_id:$current_version:$latest_version:$shader_name:$current_version_id:$latest_version_id"
+                SHADER_PROJECT_TO_FILE[$project_id]="$filename"
+                
+                if [[ "$current_version" != "$latest_version" ]]; then
+                    SHADER_UPDATES=$((SHADER_UPDATES + 1))
+                    printf "\r[DEBUG] Shader update found: %s (%s → %s)\n" "$shader_name" "$current_version" "$latest_version"
+                fi
+            fi
+        fi
+        sleep 0.25  # Rate limiting
+    done
+fi
+
+printf "\n"
+log_success "Found $TOTAL_SHADERS shader pack(s), $SHADER_UPDATES update(s) available"
+echo ""
+
+# Phase 1c: Scan resource packs
+log_info "Phase 1c: Scanning resource packs..."
+echo ""
+
+if [[ -d "$RESOURCEPACKS_DIR" ]]; then
+    for rp_file in "$RESOURCEPACKS_DIR"/*.zip; do
+        [[ ! -f "$rp_file" ]] && continue
+        
+        TOTAL_RESOURCEPACKS=$((TOTAL_RESOURCEPACKS + 1))
+        filename=$(basename "$rp_file")
+        printf "\r[%d] Scanning: %s" "$TOTAL_RESOURCEPACKS" "$filename"
+        
+        # Calculate hash
+        rp_hash=$(sha1sum "$rp_file" | cut -d' ' -f1)
+        
+        # Query Modrinth by hash
+        response=$(curl -s --max-time 10 "https://api.modrinth.com/v2/version_file/$rp_hash?algorithm=sha1" 2>/dev/null || echo "")
+        
+        if [[ -n "$response" ]] && echo "$response" | jq -e '.project_id' >/dev/null 2>&1; then
+            project_id=$(echo "$response" | jq -r '.project_id')
+            current_version=$(echo "$response" | jq -r '.version_number')
+            current_version_id=$(echo "$response" | jq -r '.id')
+            rp_name=$(echo "$response" | jq -r '.name')
+            
+            # Get latest version (no game version filter for resource packs - they're usually cross-version compatible)
+            versions_response=$(curl -s --max-time 10 "https://api.modrinth.com/v2/project/$project_id/version" 2>/dev/null || echo "[]")
+            
+            if [[ "$versions_response" != "[]" ]] && echo "$versions_response" | jq -e '.[0]' >/dev/null 2>&1; then
+                latest_version=$(echo "$versions_response" | jq -r '.[0].version_number')
+                latest_version_id=$(echo "$versions_response" | jq -r '.[0].id')
+                
+                RESOURCEPACK_INFO[$filename]="$project_id:$current_version:$latest_version:$rp_name:$current_version_id:$latest_version_id"
+                RESOURCEPACK_PROJECT_TO_FILE[$project_id]="$filename"
+                
+                if [[ "$current_version" != "$latest_version" ]]; then
+                    RESOURCEPACK_UPDATES=$((RESOURCEPACK_UPDATES + 1))
+                fi
+            fi
+        fi
+        sleep 0.25  # Rate limiting
+    done
+fi
+
+printf "\n"
+log_success "Found $TOTAL_RESOURCEPACKS resource pack(s), $RESOURCEPACK_UPDATES update(s) available"
 echo ""
 
 # Phase 2: Resolve version constraints for all dependencies
@@ -464,10 +597,31 @@ done
 log_info "Phase 4.5: Resolving missing dependencies..."
 echo ""
 
-# Build a list of installed mod project IDs from what we already scanned
+# Build a list of installed mod project IDs - check BOTH Modrinth-recognized mods AND files in mods folder
 declare -A INSTALLED_MODS
 for proj_id in "${!PROJECT_TO_FILE[@]}"; do
     INSTALLED_MODS[$proj_id]="yes"
+done
+
+# Also check for mods by scanning actual files and querying Modrinth by hash
+log_info "Building complete dependency map from installed mods..."
+for jar_file in "$MODS_DIR"/*.jar; do
+    [[ ! -f "$jar_file" ]] && continue
+    
+    # Calculate hash
+    jar_hash=$(sha1sum "$jar_file" | cut -d' ' -f1)
+    
+    # Quick check: if already in our recognized mods, skip
+    jar_basename=$(basename "$jar_file")
+    [[ -n "${MOD_INFO[$jar_basename]:-}" ]] && continue
+    
+    # Try to find this mod on Modrinth by hash
+    hash_result=$(curl -s --max-time 5 "https://api.modrinth.com/v2/version_file/$jar_hash?algorithm=sha1" 2>/dev/null || echo "")
+    if [[ -n "$hash_result" ]] && echo "$hash_result" | jq -e '.project_id' >/dev/null 2>&1; then
+        proj_id=$(echo "$hash_result" | jq -r '.project_id')
+        INSTALLED_MODS[$proj_id]="yes"
+    fi
+    sleep 0.25  # Rate limiting
 done
 
 # Check ALL installed mods for missing dependencies (not just mods being updated)
@@ -489,6 +643,13 @@ for filename in "${!MOD_INFO[@]}"; do
             # Skip if not required or if it's neoforge/minecraft
             [[ "$dep_type" != "required" ]] && continue
             [[ "$dep_id" == "neoforge" || "$dep_id" == "minecraft" ]] && continue
+            
+            # Skip Fabric-specific dependencies when using NeoForge
+            if [[ "$LOADER_TYPE" == "neoforge" ]]; then
+                [[ "$dep_id" == "P7dR8mSH" ]] && continue  # Fabric API
+                [[ "$dep_id" == "fabric" ]] && continue
+                [[ "$dep_id" == "fabric-api" ]] && continue
+            fi
             
             # If dependency is not installed, add to missing list
             if [[ -z "${INSTALLED_MODS[$dep_id]:-}" ]]; then
@@ -826,7 +987,7 @@ else
     echo "═══════════════════════════════════════════════════════════════"
     log_success "Successfully Updated:  $DOWNLOAD_SUCCESS/$TOTAL_TO_UPDATE"
     if [[ $DOWNLOAD_FAILED -gt 0 ]]; then
-        log_error "Failed:                $DOWNLOAD_FAILED/$TOTAL_TO_UPDATE"
+        log_error "Failed:                $DOWNLOAD_FAILED/$DOWNLOAD_FAILED"
     fi
     echo "═══════════════════════════════════════════════════════════════"
     
@@ -834,6 +995,124 @@ else
     if [[ $DOWNLOAD_SUCCESS -gt 0 ]]; then
         touch "$MODS_DIR/.updated"
         log_info "Created update marker for build script"
+    fi
+fi
+
+# Update shaders if available
+if [[ $SHADER_UPDATES -gt 0 ]]; then
+    echo ""
+    log_info "═══════════════════════════════════════════════════════════════"
+    log_info "  Shader Pack Updates"
+    log_info "═══════════════════════════════════════════════════════════════"
+    echo ""
+    
+    SHADER_DOWNLOAD_SUCCESS=0
+    SHADER_DOWNLOAD_FAILED=0
+    
+    for filename in "${!SHADER_INFO[@]}"; do
+        IFS=':' read -r project_id current_ver latest_ver shader_name _ latest_version_id <<< "${SHADER_INFO[$filename]}"
+        
+        [[ "$current_ver" == "$latest_ver" ]] && continue
+        
+        if [[ "$DRY_RUN" != "true" ]]; then
+            log_info "Updating: $shader_name ($current_ver → $latest_ver)"
+            
+            # Get download URL (with aggressive retry logic)
+            version_data=""
+            for retry in {1..5}; do
+                version_data=$(curl -s --max-time 20 --connect-timeout 10 "https://api.modrinth.com/v2/version/$latest_version_id" 2>/dev/null || echo "")
+                if [[ -n "$version_data" ]] && echo "$version_data" | jq -e '.files[0].url' >/dev/null 2>&1; then
+                    break
+                fi
+                if [[ $retry -lt 5 ]]; then
+                    printf "[RETRY] Download URL lookup attempt %d failed, retrying...\n" "$retry"
+                    sleep $((retry * 2))
+                fi
+            done
+            
+            if [[ -n "$version_data" ]] && echo "$version_data" | jq -e '.files[0].url' >/dev/null 2>&1; then
+                download_url=$(echo "$version_data" | jq -r '.files[0].url')
+                new_filename=$(echo "$version_data" | jq -r '.files[0].filename')
+                
+                if curl -L --max-time 30 -o "$SHADERS_DIR/$new_filename" "$download_url" 2>&1; then
+                    rm -f "$SHADERS_DIR/$filename"
+                    SHADER_DOWNLOAD_SUCCESS=$((SHADER_DOWNLOAD_SUCCESS + 1))
+                    log_success "Updated: $shader_name"
+                else
+                    SHADER_DOWNLOAD_FAILED=$((SHADER_DOWNLOAD_FAILED + 1))
+                    log_error "Failed: $shader_name"
+                fi
+            else
+                SHADER_DOWNLOAD_FAILED=$((SHADER_DOWNLOAD_FAILED + 1))
+                log_error "Failed to get download URL for: $shader_name"
+            fi
+        else
+            log_info "Would update: $shader_name ($current_ver → $latest_ver) [dry run]"
+        fi
+    done
+    
+    if [[ "$DRY_RUN" != "true" ]]; then
+        echo ""
+        log_success "Shader updates: $SHADER_DOWNLOAD_SUCCESS successful, $SHADER_DOWNLOAD_FAILED failed"
+    fi
+fi
+
+# Update resource packs if available
+if [[ $RESOURCEPACK_UPDATES -gt 0 ]]; then
+    echo ""
+    log_info "═══════════════════════════════════════════════════════════════"
+    log_info "  Resource Pack Updates"
+    log_info "═══════════════════════════════════════════════════════════════"
+    echo ""
+    
+    RP_DOWNLOAD_SUCCESS=0
+    RP_DOWNLOAD_FAILED=0
+    
+    for filename in "${!RESOURCEPACK_INFO[@]}"; do
+        IFS=':' read -r project_id current_ver latest_ver rp_name _ latest_version_id <<< "${RESOURCEPACK_INFO[$filename]}"
+        
+        [[ "$current_ver" == "$latest_ver" ]] && continue
+        
+        if [[ "$DRY_RUN" != "true" ]]; then
+            log_info "Updating: $rp_name ($current_ver → $latest_ver)"
+            
+            # Get download URL (with aggressive retry logic)
+            version_data=""
+            for retry in {1..5}; do
+                version_data=$(curl -s --max-time 20 --connect-timeout 10 "https://api.modrinth.com/v2/version/$latest_version_id" 2>/dev/null || echo "")
+                if [[ -n "$version_data" ]] && echo "$version_data" | jq -e '.files[0].url' >/dev/null 2>&1; then
+                    break
+                fi
+                if [[ $retry -lt 5 ]]; then
+                    printf "[RETRY] Download URL lookup attempt %d failed, retrying...\n" "$retry"
+                    sleep $((retry * 2))
+                fi
+            done
+            
+            if [[ -n "$version_data" ]] && echo "$version_data" | jq -e '.files[0].url' >/dev/null 2>&1; then
+                download_url=$(echo "$version_data" | jq -r '.files[0].url')
+                new_filename=$(echo "$version_data" | jq -r '.files[0].filename')
+                
+                if curl -L --max-time 30 -o "$RESOURCEPACKS_DIR/$new_filename" "$download_url" 2>&1; then
+                    rm -f "$RESOURCEPACKS_DIR/$filename"
+                    RP_DOWNLOAD_SUCCESS=$((RP_DOWNLOAD_SUCCESS + 1))
+                    log_success "Updated: $rp_name"
+                else
+                    RP_DOWNLOAD_FAILED=$((RP_DOWNLOAD_FAILED + 1))
+                    log_error "Failed: $rp_name"
+                fi
+            else
+                RP_DOWNLOAD_FAILED=$((RP_DOWNLOAD_FAILED + 1))
+                log_error "Failed to get download URL for: $rp_name"
+            fi
+        else
+            log_info "Would update: $rp_name ($current_ver → $latest_ver) [dry run]"
+        fi
+    done
+    
+    if [[ "$DRY_RUN" != "true" ]]; then
+        echo ""
+        log_success "Resource pack updates: $RP_DOWNLOAD_SUCCESS successful, $RP_DOWNLOAD_FAILED failed"
     fi
 fi
 

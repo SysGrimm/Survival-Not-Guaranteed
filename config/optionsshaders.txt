@@ -6,7 +6,7 @@
 shaders=true
 
 # Set the default shader pack
-shaderPack=MakeUp-UltraFast-9.1f.zip
+shaderPack=BSL_v10.1.zip
 
 # Performance settings optimized for the MakeUp shader
 shadowMapHalfRes=false
