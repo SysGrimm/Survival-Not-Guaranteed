@@ -364,6 +364,12 @@ get_manual_environment_override() {
     local filename="$1"
     local mod_name=$(basename "$filename" .jar | tr '[:upper:]' '[:lower:]')
     
+    # Athena CTM - override to universal (needed by Oritech on client)
+    if [[ "$mod_name" == *"athena"* ]]; then
+        echo "both"
+        return
+    fi
+    
     # Samurai Dynasty - correct slug is "epic-samurais", not "samurai"
     if [[ "$mod_name" == *"samurai_dynasty"* ]] || [[ "$mod_name" == *"samurai-dynasty"* ]]; then
         echo "both"
