@@ -378,6 +378,13 @@ get_manual_environment_override() {
     local filename="$1"
     local mod_name=$(basename "$filename" .jar | tr '[:upper:]' '[:lower:]')
     
+    # Start of Universal libraries enforcement (Fix for dependency issues)
+    local universal_libs="octolib|creativecore|balm|puzzleslib|curios|collective|azurelib|libx|glitchcore|badpackets|moonlight|resourcefullib|titanium|geckolib|architectury|cloth_config"
+    if [[ "$mod_name" =~ $universal_libs ]]; then
+        echo "both"
+        return
+    fi
+    
     # Athena CTM - override to universal (needed by Oritech on client)
     if [[ "$mod_name" == *"athena"* ]]; then
         echo "both"
@@ -999,12 +1006,81 @@ lookup_mod_with_validation() {
     return 0
 }
 
+# ==================== EXTRA CONTENT SCANNING ====================
+
+# Common function to scan resource packs and shader packs
+scan_extras() {
+    local scan_dir="$1"
+    local category_name="$2"  # "resourcepacks" or "shaderpacks"
+    local file_pattern="$3"   # "*.zip" for example
+    
+    # Check if directory exists and has files
+    if [ ! -d "$scan_dir" ]; then return 0; fi
+    local count=$(ls "$scan_dir"/$file_pattern 2>/dev/null | wc -l)
+    if [ "$count" -eq 0 ]; then return 0; fi
+    
+    echo "Scanning $category_name in: $scan_dir ($count found)" >&2
+    
+    for file in "$scan_dir"/$file_pattern; do
+        if [ ! -f "$file" ]; then continue; fi
+        
+        local filename=$(basename "$file")
+        local file_sha1=$(calculate_sha1 "$file")
+        local file_sha512=$(calculate_sha512 "$file")
+        local file_size=$(get_file_size "$file")
+        
+        echo "- Processing $category_name: $filename" >&2
+        
+        # Look up on Modrinth
+        local lookup_result=$(lookup_mod_with_validation "$file")
+        local result_type=$(echo "$lookup_result" | cut -d'|' -f1)
+        local source=$(echo "$lookup_result" | cut -d'|' -f2)
+        local download_url=$(echo "$lookup_result" | cut -d'|' -f3)
+
+        if [ "$result_type" = "FOUND" ]; then
+            # Output JSON entry to stdout (captured by caller)
+            cat << EOF
+    {
+      "path": "$category_name/$filename",
+      "hashes": {
+        "sha1": "$file_sha1",
+        "sha512": "$file_sha512"
+      },
+      "env": {
+        "client": "required",
+        "server": "unsupported"
+      },
+      "downloads": [
+        "$download_url"
+      ],
+      "fileSize": $file_size
+    },
+EOF
+            echo "  + $source: $download_url" >&2
+            
+            # Increment counters (need to be exported or handled differently in subshell)
+            # Since we are outputting to stdout, we can't easily update counters in parent shell if piped
+            # But we are redirecting > file, so safe.
+            TOTAL_MODS=$((TOTAL_MODS + 1))
+            MODRINTH_FOUND=$((MODRINTH_FOUND + 1))
+        else
+            echo "  - $category_name not found on Modrinth, will be bundled: $filename" >&2
+            PACK_INCLUDED=$((PACK_INCLUDED + 1))
+        fi
+    done
+}
+
 # ==================== MANIFEST GENERATION ====================
 
 # Generate final manifest JSON
 generate_final_manifest() {
-  local mod_entries="$1"
+  local mod_entries_file="$1"
   local file_count="$2"
+  
+  # Remove trailing comma if file exists and has content
+  if [ -s "$mod_entries_file" ]; then
+    sed -i '$ s/,$//' "$mod_entries_file"
+  fi
   
   # Generate complete manifest optimized for Modrinth App
   cat > modrinth.index.json << EOF
@@ -1015,7 +1091,7 @@ generate_final_manifest() {
   "name": "$PROJECT_NAME",
   "summary": "A challenging survival modpack featuring magic, technology, and culinary adventures with optimized shaders",
   "files": [
-$(echo -e "$mod_entries")
+$(cat "$mod_entries_file" 2>/dev/null || echo "")
   ],
   "dependencies": {
     "minecraft": "$MINECRAFT_VERSION",
@@ -1024,7 +1100,7 @@ $(echo -e "$mod_entries")
 }
 EOF
   
-  echo "+ Generated manifest with $file_count mod entries"
+  echo "+ Generated manifest with $file_count entries"
 }
 
 # Generate mod entry from override configuration (used for environment detection)
@@ -1071,53 +1147,36 @@ generate_manifest() {
   # In CI mode, use existing manifest instead of scanning mods
   if [ "$CI_MODE" = "true" ] && [ -f "modrinth.index.json" ]; then
     echo "- CI mode: Using existing manifest (skipping mod scanning)..."
-    
-    # Update version in existing manifest if needed
-    if [ "$(jq -r '.versionId' modrinth.index.json)" != "$CURRENT_VERSION" ]; then
-      echo "+ Updating manifest version: $(jq -r '.versionId' modrinth.index.json) → $CURRENT_VERSION"
-      jq --arg version "$CURRENT_VERSION" '.versionId = $version' modrinth.index.json > temp_manifest.json
-      mv temp_manifest.json modrinth.index.json
-    fi
-    
-    # Set statistics from existing manifest
-    local manifest_mod_count=$(jq '.files | length' modrinth.index.json)
-    echo "+ Using existing manifest with: $manifest_mod_count mods"
-    
-    TOTAL_MODS=$manifest_mod_count
-    MODRINTH_FOUND=$manifest_mod_count
     return 0
   fi
   
-  echo "- Generating manifest from mod scan..."
+  echo "- Generating manifest from scan..."
   
-  local mod_entries=""
+  # Initialize temp file for entries
+  exec 3> temp_mod_entries.json
+  
   local file_count=0
   
   # Find mod directory
   local effective_mods_dir="$MODS_DIR"
   if [ ! -d "$effective_mods_dir" ]; then
     echo "- ERROR: No mods directory found at: $effective_mods_dir"
-    echo "- The mods directory should be present (either from local development or CI download)"
-    echo "- If running in CI, ensure the workflow downloads mods from manifest first"
     exit 1
   fi
   
-  # Check if mods directory is empty or contains only empty files (CI download failures)
+  # Check if mods directory is empty
   local jar_count=$(ls "$effective_mods_dir"/*.jar 2>/dev/null | wc -l)
   if [ "$jar_count" -eq 0 ]; then
-    echo "- ERROR: No mod JAR files found in $effective_mods_dir"
-    echo "- Local development: Ensure mod files are present"
-    echo "- CI environment: Check that manifest download step succeeded"
-    exit 1
+    # Create empty directory if needed to allow purely override-based packs? 
+    # But usually a pack has mods.
+    echo "WARNING: No mods found in $effective_mods_dir"
   fi
   
   echo "Scanning mods in: $effective_mods_dir ($jar_count mod files found)"
   
   # Process each mod file
   for mod_file in "$effective_mods_dir"/*.jar; do
-    if [ ! -f "$mod_file" ]; then
-      continue
-    fi
+    if [ ! -f "$mod_file" ]; then continue; fi
     
     local filename=$(basename "$mod_file")
     local file_sha1=$(calculate_sha1 "$mod_file")
@@ -1135,48 +1194,30 @@ generate_manifest() {
     local source=$(echo "$lookup_result" | cut -d'|' -f2)
     local download_url=$(echo "$lookup_result" | cut -d'|' -f3)
     
-    # Update statistics based on result
+    # Update statistics
     case "$source" in
-      "manual-override")
-        MANUAL_OVERRIDES_USED=$((MANUAL_OVERRIDES_USED + 1))
-        ;;
-      "modrinth-hash"|"modrinth-search")
-        MODRINTH_FOUND=$((MODRINTH_FOUND + 1))
-        ;;
-      "not-found"|"dependency-safety")
-        PACK_INCLUDED=$((PACK_INCLUDED + 1))
-        ;;
+      "manual-override") MANUAL_OVERRIDES_USED=$((MANUAL_OVERRIDES_USED + 1)) ;;
+      "modrinth-hash"|"modrinth-search") MODRINTH_FOUND=$((MODRINTH_FOUND + 1)) ;;
+      "not-found"|"dependency-safety") PACK_INCLUDED=$((PACK_INCLUDED + 1)) ;;
     esac
     
     # Update environment statistics
     case "$mod_env" in
-      "client_only")
-        CLIENT_ONLY_MODS=$((CLIENT_ONLY_MODS + 1))
-        ;;
-      "server_only")
-        SERVER_ONLY_MOD_COUNT=$((SERVER_ONLY_MOD_COUNT + 1))
-        ;;
-      "both")
-        UNIVERSAL_MODS=$((UNIVERSAL_MODS + 1))
-        ;;
-      "client_required_server_optional")
-        UNIVERSAL_MODS=$((UNIVERSAL_MODS + 1))  # Count as universal for stats
-        ;;
+      "client_only") CLIENT_ONLY_MODS=$((CLIENT_ONLY_MODS + 1)) ;;
+      "server_only") SERVER_ONLY_MOD_COUNT=$((SERVER_ONLY_MOD_COUNT + 1)) ;;
+      "both") UNIVERSAL_MODS=$((UNIVERSAL_MODS + 1)) ;;
+      "client_required_server_optional") UNIVERSAL_MODS=$((UNIVERSAL_MODS + 1)) ;;
     esac
     
     # Check for failed lookups in strict mode
     if [ "$result_type" = "FAILED" ]; then
       echo "  - ERROR: Failed to find external download: $filename"
-      continue # Skip this mod, don't add to manifest
+      continue
     fi
     
-    # Use the actual file information (no smart updates)
     local actual_filename="$filename"
-    local actual_sha1="$file_sha1"
-    local actual_sha512="$file_sha512"
-    local actual_size="$file_size"
     
-    # Set environment variables based on mod_env
+    # Set environment variables
     local client_env="required"
     local server_env="required"
     
@@ -1194,60 +1235,62 @@ generate_manifest() {
       "both")
         client_env="required"
         server_env="required"
-        echo "  → Universal mod (client + server)"
+        echo "  → Universal"
         ;;
       "client_required_server_optional")
         client_env="required"
         server_env="optional"
-        echo "  → Client-required, server-optional mod detected"
+        echo "  → Client-required, server-optional"
         ;;
       *)
         client_env="required"
         server_env="required"
-        echo "  → Default: Universal mod (client + server)"
+        echo "  → Default: Universal"
         ;;
     esac
     
-    # Build file entry
-    local entry="    {\n"
-    entry="$entry      \"path\": \"mods/$actual_filename\",\n"
-    entry="$entry      \"hashes\": {\n"
-    entry="$entry        \"sha1\": \"$actual_sha1\",\n"
-    entry="$entry        \"sha512\": \"$actual_sha512\"\n"
-    entry="$entry      },\n"
-    entry="$entry      \"env\": {\n"
-    entry="$entry        \"client\": \"$client_env\",\n"
-    entry="$entry        \"server\": \"$server_env\"\n"
-    entry="$entry      },\n"
-    entry="$entry      \"fileSize\": $actual_size"
-    
-    # Add download URLs based on result
+    # Add to manifest only if URL found
     if [ "$result_type" = "FOUND" ]; then
-      entry="$entry,\n      \"downloads\": [\n"
-      entry="$entry        \"$download_url\"\n"
-      entry="$entry      ]"
+      cat >&3 << EOF
+    {
+      "path": "mods/$actual_filename",
+      "hashes": {
+        "sha1": "$file_sha1",
+        "sha512": "$file_sha512"
+      },
+      "env": {
+        "client": "$client_env",
+        "server": "$server_env"
+      },
+      "downloads": [
+        "$download_url"
+      ],
+      "fileSize": $file_size
+    },
+EOF
       echo "  + $source: $download_url"
-      
-      entry="$entry\n    }"
-      
-      # Add to entries
-      if [ $file_count -gt 0 ]; then
-        mod_entries="$mod_entries,\n$entry"
-      else
-        mod_entries="$entry"
-      fi
-      
       file_count=$((file_count + 1))
     else
       echo "  - Will include in pack (bundled): $filename"
-      # Do NOT add to manifest if no URL - handled by overrides
     fi
-    
     TOTAL_MODS=$((TOTAL_MODS + 1))
   done
+
+  # Process Extra Content (Resource Packs & Shaders)
+  scan_extras "resourcepacks" "resourcepacks" "*.zip" >&3
+  scan_extras "shaderpacks" "shaderpacks" "*.zip" >&3
+  
+  # Close file descriptor
+  exec 3>&-
+  
+  # Recalculate file count from the temp file
+  file_count=$(grep -c "\"path\":" temp_mod_entries.json || echo "0")
   
   # Generate the complete manifest
-  generate_final_manifest "$mod_entries" "$file_count"
+  generate_final_manifest "temp_mod_entries.json" "$file_count"
+  
+  # Cleanup
+  rm -f temp_mod_entries.json
 }
 
 # ==================== PACK CREATION ====================
@@ -1279,12 +1322,32 @@ create_mrpack() {
   
   # Copy other assets to overrides/ for Modrinth App compatibility
   for dir in kubejs scripts shaderpacks resourcepacks datapacks; do
-    if [ -d "minecraft/$dir" ] && [ "$(ls -A "minecraft/$dir" 2>/dev/null)" ]; then
-      cp -r "minecraft/$dir" "$temp_dir/overrides/"
-      echo "  + minecraft/$dir/ → overrides/$dir/ (Modrinth App optimized)"
-    elif [ -d "$dir" ] && [ "$(ls -A "$dir" 2>/dev/null)" ]; then
-      cp -r "$dir" "$temp_dir/overrides/"
-      echo "  + $dir/ → overrides/$dir/ (Modrinth App optimized)"
+    # Only support root directories for simplicity in this enhanced logic
+    if [ -d "$dir" ] && [ "$(ls -A "$dir" 2>/dev/null)" ]; then
+       # Create target directory
+       mkdir -p "$temp_dir/overrides/$dir"
+       
+       # Special filter for packs to avoid bundling if they are in the manifest
+       if [ "$dir" = "resourcepacks" ] || [ "$dir" = "shaderpacks" ]; then
+           for file in "$dir"/*; do
+             if [ -f "$file" ]; then
+                local filename=$(basename "$file")
+                local rel_path="$dir/$filename"
+                
+                # specific check: is this file in the manifest?
+                if jq -e --arg path "$rel_path" '.files[] | select(.path == $path)' modrinth.index.json >/dev/null 2>&1; then
+                    echo "  - Skipping copy of $rel_path (downloaded via manifest)"
+                else
+                    cp "$file" "$temp_dir/overrides/$dir/"
+                    echo "  + Bundling $rel_path (not in manifest)"
+                fi
+             fi
+           done
+       else
+           # Copy everything for other directories (kubejs, etc)
+           cp -r "$dir"/* "$temp_dir/overrides/$dir/" 2>/dev/null || true
+           echo "  + $dir/ → overrides/$dir/ (Modrinth App optimized)"
+       fi
     fi
   done
   

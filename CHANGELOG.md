@@ -10,13 +10,13 @@ OTHER CHANGES
 
 TECHNICAL DETAILS
 
-- Total Mods: 203
+- Total Mods: 209
 - Universal Mods (Client + Server): 182
 - Client-Only Mods: 20
 - Server-Only Mods: 1
 - Minecraft Version: 1.21.1
 - NeoForge Version: 21.1.215
-- External Downloads: 203 of 203 (100%)
+- External Downloads: 209 of 209 (100%)
 - Pack Size: Optimized with external downloads
 - Server Compatibility: Dedicated servers will automatically exclude client-only mods
 

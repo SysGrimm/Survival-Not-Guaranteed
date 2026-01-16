@@ -65,7 +65,7 @@ jobs:
         # No need to download mods since we're using pure external downloads
         
         # Make build script executable
-        chmod +x build.sh
+        chmod +x tools/build.sh
         
         # Run build script to generate fresh .mrpack from manifest
         echo "- Running build script to generate modpack..."
