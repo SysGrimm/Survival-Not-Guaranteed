@@ -135,8 +135,15 @@ jobs:
           
           # Check Modrinth if we have project ID
           if [ -n "${{ vars.MODRINTH_PROJECT_ID }}" ]; then
-            local modrinth_response=$(curl -s "https://api.modrinth.com/v2/project/${{ vars.MODRINTH_PROJECT_ID }}/version" 2>/dev/null || echo "[]")
-            if echo "$modrinth_response" | jq -e ".[] | select(.version_number == \"$version\")" >/dev/null 2>&1; then
+            # Direct check for specific version exists (more reliable than list parsing)
+            local modrinth_response=$(curl -s "https://api.modrinth.com/v2/project/${{ vars.MODRINTH_PROJECT_ID }}/version/$version" 2>/dev/null || echo "")
+            if echo "$modrinth_response" | jq -e '.id' >/dev/null 2>&1; then
+              return 0  # exists
+            fi
+            
+            # Additional safety: Check if it's in the version list (API redundancy)
+            local list_response=$(curl -s "https://api.modrinth.com/v2/project/${{ vars.MODRINTH_PROJECT_ID }}/version" 2>/dev/null || echo "[]")
+            if echo "$list_response" | jq -e ".[] | select(.version_number == \"$version\")" >/dev/null 2>&1; then
               return 0  # exists
             fi
           fi
