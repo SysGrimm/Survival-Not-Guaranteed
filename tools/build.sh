@@ -159,7 +159,7 @@ get_mod_environment_from_api() {
 # ==================== CLIENT/SERVER ENVIRONMENT DETECTION ====================
 
 # Define client-only mods that should never be installed on servers
-CLIENT_ONLY_MODS=(
+KNOWN_CLIENT_ONLY_MODS=(
     # Rendering & Graphics
     "iris" "optifine" "sodium" "embeddium" "rubidium" "oculus" "continuity" "ctm" "connected_textures"
     "entity_texture_features" "entity_model_features" "more_beautiful_torches" "dynamic_lights"
@@ -235,7 +235,7 @@ is_client_only_mod() {
     local filename="$1"
     local mod_name=$(echo "$filename" | sed 's/\.jar$//' | sed 's/-[0-9].*$//' | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
     
-    for client_mod in "${CLIENT_ONLY_MODS[@]}"; do
+    for client_mod in "${KNOWN_CLIENT_ONLY_MODS[@]}"; do
         if [[ "$mod_name" == *"$client_mod"* ]] || [[ "$client_mod" == *"$mod_name"* ]]; then
             return 0  # Is client-only
         fi
@@ -1821,7 +1821,6 @@ main() {
   
   rm -f modrinth.index.json 2>/dev/null || true
   rm -f *.mrpack 2>/dev/null || true
-  rm -f CHANGELOG.md 2>/dev/null || true
   
   # Restore manifest in CI mode
   if [ "$CI_MODE" = "true" ] && [ -f "modrinth.index.json.backup" ]; then

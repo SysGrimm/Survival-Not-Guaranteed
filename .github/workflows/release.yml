@@ -166,6 +166,18 @@ jobs:
         
         # Run build script with version override
         chmod +x tools/build.sh
+        
+        # When in CI mode, tools/build.sh respects the passed version but might try to use existing modrinth.index.json
+        # We need to ensure that the version inside modrinth.index.json is updated to match our NEW_VERSION
+        # BEFORE the build script runs or DURING the build.
+        
+        # The build script has a CI_MODE logic that reads the existing json. 
+        # Let's manually patch the JSON first to be absolutely sure the internal ID matches.
+        if [ -f "modrinth.index.json" ]; then
+             echo "Patching modrinth.index.json with new version $NEW_VERSION"
+             jq --arg v "$NEW_VERSION" '.versionId = $v' modrinth.index.json > modrinth.index.json.tmp && mv modrinth.index.json.tmp modrinth.index.json
+        fi
+
         ./tools/build.sh --version "$NEW_VERSION"
         
         # Verify build output
@@ -437,6 +449,9 @@ jobs:
         
         # Note: We don't commit the .mrpack file - it's built on-demand by CI
         # We only track the source files (configs, scripts, etc.) that define the modpack
+        
+        # Revert changes to modrinth.index.json as it's modified for the artifact only
+        git checkout -- modrinth.index.json 2>/dev/null || true
         
         # Check if there are changes to commit (there shouldn't be any since we build from manifest)
         if git diff --quiet && git diff --cached --quiet; then
