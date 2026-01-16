@@ -158,7 +158,8 @@ jobs:
         echo "+ Final version: $NEW_VERSION (verified as unused)"
         
         # Run build script with version override
-        ./build.sh --version "$NEW_VERSION"
+        chmod +x tools/build.sh
+        ./tools/build.sh --version "$NEW_VERSION"
         
         # Verify build output
         MRPACK_FILE=$(find . -name "*.mrpack" -type f | head -1)

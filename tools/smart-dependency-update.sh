@@ -325,6 +325,12 @@ if [[ -d "$RESOURCEPACKS_DIR" ]]; then
             current_version_id=$(echo "$response" | jq -r '.id')
             rp_name=$(echo "$response" | jq -r '.name')
             
+            # Check for pinned status
+            if [[ -n "${PINNED_MODS[$project_id]:-}" ]]; then
+                 log_warning "Resource pack pinned: $rp_name"
+                 continue
+            fi
+
             # Get latest version (no game version filter for resource packs - they're usually cross-version compatible)
             versions_response=$(curl -s --max-time 10 "https://api.modrinth.com/v2/project/$project_id/version" 2>/dev/null || echo "[]")
             
@@ -727,7 +733,7 @@ log_info "Phase 5: Detecting NeoForge version requirements..."
 echo ""
 
 # Get current NeoForge version from build.sh
-CURRENT_NEOFORGE_VERSION=$(grep '^NEOFORGE_VERSION=' "$BASE_DIR/build.sh" | cut -d'"' -f2)
+CURRENT_NEOFORGE_VERSION=$(grep '^NEOFORGE_VERSION=' "$BASE_DIR/tools/build.sh" | cut -d'"' -f2)
 log_info "Current NeoForge version: $CURRENT_NEOFORGE_VERSION"
 
 # Track the highest required NeoForge version
@@ -784,7 +790,7 @@ if [[ -n "$HIGHEST_NEOFORGE_FULL" ]] && [[ "$CURRENT_NEOFORGE_VERSION" != "$HIGH
         
         # Update build.sh if not in dry run
         if [[ "$DRY_RUN" != "true" ]]; then
-            sed -i "s/^NEOFORGE_VERSION=\"[^\"]*\"/NEOFORGE_VERSION=\"$HIGHEST_NEOFORGE_FULL\"/" "$BASE_DIR/build.sh"
+            sed -i "s/^NEOFORGE_VERSION=\"[^\"]*\"/NEOFORGE_VERSION=\"$HIGHEST_NEOFORGE_FULL\"/" "$BASE_DIR/tools/build.sh"
             log_success "Updated build.sh with NeoForge $HIGHEST_NEOFORGE_FULL"
             
             # Also update modrinth.launcher.json if it exists

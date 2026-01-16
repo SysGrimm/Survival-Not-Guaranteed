@@ -69,3 +69,5 @@ download-*.sh
 cache/
 temp/
 tmp/
+# AI Assistant configuration
+.github/copilot-instructions.md

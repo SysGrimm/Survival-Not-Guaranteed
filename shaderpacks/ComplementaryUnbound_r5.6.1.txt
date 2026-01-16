@@ -1,0 +1,4 @@
+# Complementary Unbound Configuration
+# Forced Reimagined Sun/Moon Style for Enhanced Celestials compatibility (Blood Moons)
+profile=CUSTOM
+SUN_MOON_STYLE_DEFINE=1
