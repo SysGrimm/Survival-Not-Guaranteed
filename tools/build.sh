@@ -1147,6 +1147,16 @@ generate_manifest() {
   # In CI mode, use existing manifest instead of scanning mods
   if [ "$CI_MODE" = "true" ] && [ -f "modrinth.index.json" ]; then
     echo "- CI mode: Using existing manifest (skipping mod scanning)..."
+    
+    # Update manifest version if an override is provided (Essential for smart versioning in CI)
+    if [ -n "$OVERRIDE_VERSION" ]; then
+      local current_v=$(jq -r '.versionId' modrinth.index.json)
+      if [ "$current_v" != "$OVERRIDE_VERSION" ]; then
+        echo "  + Updating manifest version: $current_v -> $OVERRIDE_VERSION"
+        jq --arg v "$OVERRIDE_VERSION" '.versionId = $v' modrinth.index.json > modrinth.index.json.tmp && mv modrinth.index.json.tmp modrinth.index.json
+      fi
+    fi
+    
     return 0
   fi
   
