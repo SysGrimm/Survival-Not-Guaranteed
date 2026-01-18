@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "game": "minecraft",
-  "versionId": "3.17.0",
+  "versionId": "3.18.1",
   "name": "Survival Not Guaranteed",
   "summary": "A challenging survival modpack featuring magic, technology, and culinary adventures with optimized shaders",
   "files": [
@@ -486,19 +486,19 @@
       "fileSize": 18382
     },
     {
-      "path": "mods/ColdSweat-2.4-b06e.jar",
+      "path": "mods/ColdSweat-2.4-b06f.jar",
       "hashes": {
-        "sha1": "68939511914a226744b3ec6bce7c4790357da9aa",
-        "sha512": "0c03ad50a47ee537e7a5da26be06611710a1f44befba2b91d4911cb1f00513fb93f5443ba027631ee118b09b3da1edca3bd143df76f9c9b760628bd6ba115cfb"
+        "sha1": "efc29cc3da87de58595480cd675771b67e7802fd",
+        "sha512": "a032258717515e1e78c8838eccbcfab67d43e50b225a5bf286dcba3e476cf8570f8458d3c256542c1b25d1b2003a66d31d98503d9cc66f9e2e38482cc3b577be"
       },
       "env": {
         "client": "required",
         "server": "required"
       },
       "downloads": [
-        "https://cdn.modrinth.com/data/uXhSmPjd/versions/JvpNlMEx/ColdSweat-2.4-b06e.jar"
+        "https://cdn.modrinth.com/data/uXhSmPjd/versions/oREE3kta/ColdSweat-2.4-b06f.jar"
       ],
-      "fileSize": 2608976
+      "fileSize": 2608622
     },
     {
       "path": "mods/collective-1.21.1-8.13.jar",
@@ -1131,21 +1131,6 @@
       "fileSize": 355514
     },
     {
-      "path": "mods/elixirum-neoforge-1.21.1-0.2.2.jar",
-      "hashes": {
-        "sha1": "204ef1e00e1ea27bc8fff320dda19da4c668da89",
-        "sha512": "0a20deba725570ea683b200e36e7e1dceca2c481914164683b82a484366b0faa443b1461eeca77531241f8a8ecbf75c688f1778264083647b7083130621d72f7"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/oYe4cXFm/versions/BWFdlSBY/elixirum-neoforge-1.21.1-0.2.2.jar"
-      ],
-      "fileSize": 12448858
-    },
-    {
       "path": "mods/emi-1.1.22+1.21.1+neoforge.jar",
       "hashes": {
         "sha1": "cbbd038194cd63249db185c53b1d50a1767f80a3",
@@ -1493,17 +1478,17 @@
     {
       "path": "mods/fusion-1.2.12-neoforge-mc1.21.1.jar",
       "hashes": {
-        "sha1": "480f281f5c096900ca2b9cfaf0dd841c7c20b8cf",
-        "sha512": "aea08d909c2dd0dbf2e38c50e4e24c3f1a9cfc7501c4d0c5346576fc25377945d8238e777fec3f6aa3d77033c703caee2218cc3b3ffb5a4bd1416aff33361820"
+        "sha1": "d86f641b67d4b01d99da8424ba2a3edc0e6690b6",
+        "sha512": "50604fa4125e846b659479a8bb8bcef5db47460a8185902b8655d8b12c6cc67eb3cc4c08fee45e82a6b215976bea2a480e32ce420f062cea88abe17cb362365c"
       },
       "env": {
         "client": "required",
         "server": "required"
       },
       "downloads": [
-        "https://cdn.modrinth.com/data/p19vrgc2/versions/q08H2PDp/fusion-1.2.12-neoforge-mc1.21.1.jar"
+        "https://cdn.modrinth.com/data/p19vrgc2/versions/h2GrA0Ku/fusion-1.2.12-neoforge-mc1.21.1.jar"
       ],
-      "fileSize": 532933
+      "fileSize": 532912
     },
     {
       "path": "mods/fzzy_config-0.7.4+1.21+neoforge.jar",
@@ -1701,19 +1686,19 @@
       "fileSize": 313206
     },
     {
-      "path": "mods/kotlinforforge-5.10.0-all.jar",
+      "path": "mods/kotlinforforge-5.11.0-all.jar",
       "hashes": {
-        "sha1": "a86a436cb7ffd0509750ba7b078fe88143da1ea6",
-        "sha512": "0c7a23c6b8017c9a24694bc6c0dbcb3d9b4ec630ae2ff965c0ee478ca881ad70f4755388678430b0175c3abe18c66fcbc25ed9be6f600bcdc083743eaecbfc35"
+        "sha1": "4d83e8a8e8cb06b306d2cea1e903680fe513f1f3",
+        "sha512": "b32faa6d616511aff4f8b32197877c53b9f8bee103884ec37c632b5d017bb59a498ec971b68d8d94787043b0c5be666a330b61d285033c341bff83ac28a90992"
       },
       "env": {
         "client": "required",
         "server": "required"
       },
       "downloads": [
-        "https://cdn.modrinth.com/data/ordsPcFz/versions/pp2cY80Q/kotlinforforge-5.10.0-all.jar"
+        "https://cdn.modrinth.com/data/ordsPcFz/versions/NrSebcsG/kotlinforforge-5.11.0-all.jar"
       ],
-      "fileSize": 6730190
+      "fileSize": 6869790
     },
     {
       "path": "mods/Ksyxis-1.3.4.jar",
@@ -2106,19 +2091,19 @@
       "fileSize": 569818
     },
     {
-      "path": "mods/moonlight-1.21-2.29.10-neoforge.jar",
+      "path": "mods/moonlight-1.21-2.29.11-neoforge.jar",
       "hashes": {
-        "sha1": "f58d48e56bcf350e819567edb8c983718e2fa231",
-        "sha512": "e1a648359cc3655a9e768e935634d7b09306019dd02a91e94ef4ef80e2051c4bea27dd8bea0aa188c2dd0d4324b909549ef19e868a7ea0a1d78115302485e81c"
+        "sha1": "b5deaf117d5d0401053b28329e4d942a814177ad",
+        "sha512": "133c22835d1745303e5f083ce580a0479cc92b7f4da5eac4fe78ce0b6158da0bf59586dee7fed2835f5f11b377eb260aabe4ecec68de102f8e1d90b5821df822"
       },
       "env": {
         "client": "required",
         "server": "required"
       },
       "downloads": [
-        "https://cdn.modrinth.com/data/twkfQtEc/versions/gBbCg0eN/moonlight-1.21-2.29.10-neoforge.jar"
+        "https://cdn.modrinth.com/data/twkfQtEc/versions/z4AJuNxo/moonlight-1.21-2.29.11-neoforge.jar"
       ],
-      "fileSize": 1548276
+      "fileSize": 1550831
     },
     {
       "path": "mods/moredelight-25.07.28a-1.21-neoforge.jar",
@@ -3146,5 +3131,3 @@
     "neoforge": "21.1.215"
   }
 }
- 
- 
