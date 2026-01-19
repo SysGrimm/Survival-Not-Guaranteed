@@ -2271,19 +2271,19 @@
       "fileSize": 1311358
     },
     {
-      "path": "mods/oritech-neoforge-1.21.1-1.0.0-rc2.jar",
+      "path": "mods/oritech-neoforge-1.21.1-0.19.7.jar",
       "hashes": {
-        "sha1": "635f41860302077434924c37b0008c9da4fd641c",
-        "sha512": "699342f9eb988a099cbf3bfad252969d0f71bb4eb3f3e31a5c22eae6ca22fc1dd4932d65709643cd10e90f90f5ba9a61aebcfe4fbcee94465bd9ca0c8ee9f13a"
+        "sha1": "dcf527a374a4ba7359d0ed7895d1eb0926d42411",
+        "sha512": "e42bb0417a941bcce9ccae7dd745cfb3f46420976f3a83ee8d1d17c6b1535ece59d487282a20adae6f99ba457ae88dc4f6bd1185ae54364bc5c269ab9e2caf4c"
       },
       "env": {
         "client": "required",
         "server": "required"
       },
       "downloads": [
-        "https://cdn.modrinth.com/data/4sYI62kA/versions/ZD389y4a/oritech-neoforge-1.21.1-1.0.0-rc2.jar"
+        "https://cdn.modrinth.com/data/4sYI62kA/versions/bxNYCj9r/oritech-neoforge-1.21.1-0.19.7.jar"
       ],
-      "fileSize": 10566752
+      "fileSize": 8866405
     },
     {
       "path": "mods/owo-lib-neoforge-0.12.15.5-beta.1+1.21.jar",
@@ -2301,19 +2301,19 @@
       "fileSize": 1221583
     },
     {
-      "path": "mods/pandalib-neoforge-1.21.1-1.0.0-ALPHA.2.1.jar",
+      "path": "mods/pandalib-neoforge-mc1.21-0.5.2-SNAPSHOT.jar",
       "hashes": {
-        "sha1": "2e189954b3e8139b059b1b66690a55fa98946e7b",
-        "sha512": "d647176a970d4e378e7796d8f8f581b712564574eff84ff0f9173f78dd9903690b73275e5c9de4d169750958458ce424bf92df5689c0265ff8d01ec4e3006260"
+        "sha1": "a72f172d7c6975f69625d0612f2984bc22e1faf9",
+        "sha512": "8a6a36cb2fad7ee1230f3b3745d73e5b66fee34710eba7a7152c3a718e012a6d91d707852ee59f51ca405462945c050e07d5ad4ba25424779c12f895f92dfef4"
       },
       "env": {
         "client": "required",
         "server": "required"
       },
       "downloads": [
-        "https://cdn.modrinth.com/data/mEEGbEIu/versions/MS5TQVjq/pandalib-neoforge-1.21.1-1.0.0-ALPHA.2.1.jar"
+        "https://cdn.modrinth.com/data/mEEGbEIu/versions/NPR0EFtY/pandalib-neoforge-mc1.21-0.5.2-SNAPSHOT.jar"
       ],
-      "fileSize": 7669373
+      "fileSize": 862336
     },
     {
       "path": "mods/Patchouli-1.21.1-92-NEOFORGE.jar",
