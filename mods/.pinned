@@ -1,0 +1,33 @@
+# Pinned Mods - Do Not Update
+# Format: project_id:version:reason
+# Conditional Format: project_id:version:if:dependent_project_id:operator:version:reason
+#   Operators: <=, <, >=, >, ==
+#
+# These mods are pinned to specific versions due to compatibility issues
+# Conditional pins automatically release when the dependent mod updates
+
+# Fragmentum pinned to 0.0.13 (Oct 2024) for elixirum compatibility
+# elixirum 0.2.2 requires the old Deferred API that was removed in fragmentum 2.x
+# This pin will automatically release when elixirum updates past 0.2.2
+49C5QgTK:0.0.13:if:oYe4cXFm:<=:0.2.2:Required by elixirum 0.2.2 - elixirum needs old Deferred API
+
+# Relics pinned to 0.10.7.6 (Aug 2025) for reliquified_ars_nouveau compatibility
+# reliquified_ars_nouveau 0.6.1 requires IRenderableCurio interface removed in Relics 0.11+
+# This pin will automatically release when reliquified_ars_nouveau updates past 0.6.1
+OCJRPujW:0.10.7.6:if:qNOCEdeg:<=:0.6.1:Required by reliquified_ars_nouveau 0.6.1 - needs IRenderableCurio interface
+
+# JEI pinned to 19.27.0.335 (Dec 2025) for ctgui compatibility
+# ctgui 0.3.1 requires JEI >= 19.27.0.335 and breaks with newer versions
+# This pin will automatically release when ctgui updates past 0.3.1
+u6dRKJwZ:19.27.0.335:if:W38R1bwF:<=:0.3.1:Required by ctgui 0.3.1 - needs JEI 19.27.0.335 minimum
+
+# Patrix Basic Resource Pack pinned to v72 (1.21 compatible)
+olO1TaXd:72:Incompatible update 1.21.11 breaks visual stack
+
+# Oritech pinned to 0.19.7 (Dec 2024) due to server disconnect bugs
+# Version 1.0.0-rc2 causes server kicks with encoder exceptions due to PandaLib sync issues
+4sYI62kA:0.19.7:Oritech 1.0.0-rc2+ causes server disconnects (PandaLib sync bug)
+
+# PandaLib pinned to 0.5.2 (Feb 2025) due to config sync spam
+# Version 1.0.0-ALPHA.2.1 floods logs with "No synced value for miningShould" warnings every 50ms
+mEEGbEIu:0.5.2-SNAPSHOT:PandaLib 1.0.0-ALPHA.2.1+ causes network overflow (config sync spam)
