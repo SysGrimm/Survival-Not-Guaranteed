@@ -665,7 +665,7 @@ get_latest_version() {
     fi
   fi
   
-  # Compare versions and find the highest (skip local version checking)
+  # Compare versions and find the highest
   local base_version=""
   local version_source=""
   
@@ -681,28 +681,41 @@ get_latest_version() {
     [ "$v1_num" -gt "$v2_num" ]
   }
   
-  # Start with a baseline (skip local version checking)
-  base_version="3.5.15"
-  version_source="default"
-  echo "- Using default base version: $base_version"
+  # CRITICAL: Always start with the current modrinth.index.json version as the baseline
+  # This prevents version downgrades when tags get out of order
+  if [ -f "modrinth.index.json" ]; then
+    base_version=$(jq -r '.versionId' modrinth.index.json 2>/dev/null || echo "3.5.15")
+    version_source="current manifest"
+    echo "- Using current manifest version as baseline: $base_version"
+  else
+    base_version="3.5.15"
+    version_source="default"
+    echo "- No manifest found, using default base version: $base_version"
+  fi
   
-  # Check GitHub version
+  # Check GitHub version (only use if higher than current baseline)
   if [ -n "$LATEST_GITHUB_VERSION" ] && [ "$LATEST_GITHUB_VERSION" != "null" ]; then
     echo "- Found GitHub version: $LATEST_GITHUB_VERSION"
     if is_version_higher "$LATEST_GITHUB_VERSION" "$base_version"; then
+      echo "  → GitHub version is higher, updating baseline"
       base_version="$LATEST_GITHUB_VERSION"
       version_source="GitHub"
+    else
+      echo "  → GitHub version is not higher than current baseline, ignoring"
     fi
   else
     echo "- No GitHub releases found"
   fi
   
-  # Check Modrinth version
+  # Check Modrinth version (only use if higher than current baseline)
   if [ -n "$LATEST_MODRINTH_VERSION" ] && [ "$LATEST_MODRINTH_VERSION" != "null" ]; then
     echo "- Found Modrinth version: $LATEST_MODRINTH_VERSION"
     if is_version_higher "$LATEST_MODRINTH_VERSION" "$base_version"; then
+      echo "  → Modrinth version is higher, updating baseline"
       base_version="$LATEST_MODRINTH_VERSION"
       version_source="Modrinth"
+    else
+      echo "  → Modrinth version is not higher than current baseline, ignoring"
     fi
   else
     echo "- No Modrinth releases found"
@@ -772,6 +785,14 @@ get_latest_version() {
       change_type="config"
       echo "- Config changes detected"
     elif [ "$current_other_hash" != "$stored_other_hash" ]; then
+    
+    # Validate that new version is actually higher (sanity check)
+    if ! is_version_higher "$CURRENT_VERSION" "$base_version"; then
+      echo "ERROR: New version $CURRENT_VERSION is not higher than base version $base_version"
+      echo "This indicates a bug in the version increment logic"
+      exit 1
+    fi
+    
       change_type="other"
       echo "- Other changes detected (servers.dat)"
     fi
