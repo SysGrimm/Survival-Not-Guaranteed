@@ -23,11 +23,3 @@ u6dRKJwZ:19.27.0.335:if:W38R1bwF:<=:0.3.1:Required by ctgui 0.3.1 - needs JEI 19
 
 # Patrix Basic Resource Pack pinned to v72 (1.21 compatible)
 olO1TaXd:72:Incompatible update 1.21.11 breaks visual stack
-
-# Oritech pinned to 0.19.7 (Dec 2024) due to server disconnect bugs
-# Version 1.0.0-rc2 causes server kicks with encoder exceptions due to PandaLib sync issues
-4sYI62kA:0.19.7:Oritech 1.0.0-rc2+ causes server disconnects (PandaLib sync bug)
-
-# PandaLib pinned to 0.5.2 (Feb 2025) due to config sync spam
-# Version 1.0.0-ALPHA.2.1 floods logs with "No synced value for miningShould" warnings every 50ms
-mEEGbEIu:0.5.2-SNAPSHOT:PandaLib 1.0.0-ALPHA.2.1+ causes network overflow (config sync spam)

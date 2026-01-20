@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "game": "minecraft",
-  "versionId": "3.19.0",
+  "versionId": "3.19.1",
   "name": "Survival Not Guaranteed",
   "summary": "A challenging survival modpack featuring magic, technology, and culinary adventures with optimized shaders",
   "files": [
@@ -118,7 +118,7 @@
       },
       "env": {
         "client": "required",
-        "server": "unsupported"
+        "server": "required"
       },
       "downloads": [
         "https://cdn.modrinth.com/data/bbGCtEvb/versions/SGpwIu7v/ArmorStatues-v21.1.0-1.21.1-NeoForge.jar"
@@ -741,21 +741,6 @@
       "fileSize": 642543
     },
     {
-      "path": "mods/create-enchantment-industry-2.2.5b.jar",
-      "hashes": {
-        "sha1": "22a01df0317ab4d9207cf1c8724ec73d262ceec7",
-        "sha512": "eca05bb24d3d13a8420428d17717db18f63e36b844f6ab21ddd2c26d147f3a6203fc7daf1919d78cc89a6d60d98c6a7d895919e648588546dc6289dec0584604"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/JWGBpFUP/versions/RhbACzlM/create-enchantment-industry-2.2.5b.jar"
-      ],
-      "fileSize": 678897
-    },
-    {
       "path": "mods/createfood-neoforge-1.21.1-2.0.0a.jar",
       "hashes": {
         "sha1": "ce3c07d3b2ffbd1582664357f8908cae215e5123",
@@ -981,36 +966,6 @@
       "fileSize": 870482
     },
     {
-      "path": "mods/dungeons-and-taverns-end-castle-standalone-v1.1.jar",
-      "hashes": {
-        "sha1": "c56ac1270976043e7becf44aa4b09915de43d592",
-        "sha512": "f2a8db626b0a856aded8ef9fc3abc29bae18a879ddb9c3f13b405c080e7f6ff8f6c38859b165ff4b9d89dc20379b26173996f910855b2ee2dacdecf4aac820e9"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/WIs8E6hv/versions/5Gf0BYpK/dungeons-and-taverns-end-castle-standalone-v1.1.jar"
-      ],
-      "fileSize": 2506018
-    },
-    {
-      "path": "mods/dungeons-and-taverns-jungle-temple-replacement-v1.2.jar",
-      "hashes": {
-        "sha1": "00e16584bc706f9760d8f91cee05897f6cb251c2",
-        "sha512": "d2fcac25cda8bcc5f925516f94525651276d5f353e34d3762b6f07407c8ae98ad41c1d6459d5091dbd7901e5eeb8929b13c6931a5ff282ee359b0115f99b13c9"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/oHjYCS0f/versions/8Xxj6Gaj/dungeons-and-taverns-jungle-temple-replacement-v1.2.jar"
-      ],
-      "fileSize": 510766
-    },
-    {
       "path": "mods/dungeons-and-taverns-nether-fortress-overhaul-v2.4.jar",
       "hashes": {
         "sha1": "d67696f0b02512243387b8bba9d7d1376eaa8150",
@@ -1071,21 +1026,6 @@
       "fileSize": 24859622
     },
     {
-      "path": "mods/dungeons-and-taverns-woodland-mansion-replacement-v1.2.jar",
-      "hashes": {
-        "sha1": "fbf5a14273a59efacbef3d23ab358eafa69ab13d",
-        "sha512": "3cf6db9880c73281aae73640c414b88d08a9f33658fd6db772bf4f56b9327696bee5850b1fcce092893a575f81b2a6a6817ad34587a3bd32e83f55b2eca30619"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/3GfxWFCy/versions/LEkxbqdY/dungeons-and-taverns-woodland-mansion-replacement-v1.2.jar"
-      ],
-      "fileSize": 4687725
-    },
-    {
       "path": "mods/DungeonsArise-1.21.1-2.1.68-release.jar",
       "hashes": {
         "sha1": "c651339154da7b9e9cf47a80fdef22c4d59cad5c",
@@ -1114,21 +1054,6 @@
         "https://cdn.modrinth.com/data/ZsrrjDbP/versions/erk04BGa/DungeonsAriseSevenSeas-1.21.x-1.0.4-neoforge.jar"
       ],
       "fileSize": 244981
-    },
-    {
-      "path": "mods/ec_lec_plugin-1.21.1-2.0.4.jar",
-      "hashes": {
-        "sha1": "cea95a8fbb5659c7e824e652635a665fd15892e3",
-        "sha512": "17feeda808b5f980d597d0cc9ede9b2ec683d400e24695ce5ee89c300e461b5461acb5ef0991b160ce00780b3234889987d81bc8d16f3597d1965aa714b4097e"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/8Gv9ktQx/versions/ACC1MVA2/ec_lec_plugin-1.21.1-2.0.4.jar"
-      ],
-      "fileSize": 355514
     },
     {
       "path": "mods/emi-1.1.22+1.21.1+neoforge.jar",
@@ -1384,21 +1309,6 @@
         "https://cdn.modrinth.com/data/bpRHnWUb/versions/bxgGyUjY/extra-mod-integrations-all-neoforge-1.0.3%2B1.21.1.jar"
       ],
       "fileSize": 316330
-    },
-    {
-      "path": "mods/fallingtrees-neoforge-1.21.1-0.14.0-APLHA.2.1.jar",
-      "hashes": {
-        "sha1": "2f9401cf90c12efc1ca0652686333ef27fd772af",
-        "sha512": "4c9285c2eb1552a6f277ad87f88c9ad736e5c0bab1f02d3fe5835e05bd2c86c21f7cc4988f8a444c3fca75e3097f69fdb8ea118d6bd55981ab35e14b07f3fbaf"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/i2kUe4lq/versions/W9ap9BqO/fallingtrees-neoforge-1.21.1-0.14.0-APLHA.2.1.jar"
-      ],
-      "fileSize": 4074253
     },
     {
       "path": "mods/FarmersDelight-1.21.1-1.2.9.jar",
@@ -2271,21 +2181,6 @@
       "fileSize": 1311358
     },
     {
-      "path": "mods/oritech-neoforge-1.21.1-0.19.7.jar",
-      "hashes": {
-        "sha1": "dcf527a374a4ba7359d0ed7895d1eb0926d42411",
-        "sha512": "e42bb0417a941bcce9ccae7dd745cfb3f46420976f3a83ee8d1d17c6b1535ece59d487282a20adae6f99ba457ae88dc4f6bd1185ae54364bc5c269ab9e2caf4c"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/4sYI62kA/versions/bxNYCj9r/oritech-neoforge-1.21.1-0.19.7.jar"
-      ],
-      "fileSize": 8866405
-    },
-    {
       "path": "mods/owo-lib-neoforge-0.12.15.5-beta.1+1.21.jar",
       "hashes": {
         "sha1": "48dda11a6710591cf162bdbedf982ea21dd1f2ed",
@@ -2299,21 +2194,6 @@
         "https://cdn.modrinth.com/data/ccKDOlHs/versions/NMCHU6DZ/owo-lib-neoforge-0.12.15.5-beta.1%2B1.21.jar"
       ],
       "fileSize": 1221583
-    },
-    {
-      "path": "mods/pandalib-neoforge-mc1.21-0.5.2-SNAPSHOT.jar",
-      "hashes": {
-        "sha1": "a72f172d7c6975f69625d0612f2984bc22e1faf9",
-        "sha512": "8a6a36cb2fad7ee1230f3b3745d73e5b66fee34710eba7a7152c3a718e012a6d91d707852ee59f51ca405462945c050e07d5ad4ba25424779c12f895f92dfef4"
-      },
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "downloads": [
-        "https://cdn.modrinth.com/data/mEEGbEIu/versions/NPR0EFtY/pandalib-neoforge-mc1.21-0.5.2-SNAPSHOT.jar"
-      ],
-      "fileSize": 862336
     },
     {
       "path": "mods/Patchouli-1.21.1-92-NEOFORGE.jar",

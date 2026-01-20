@@ -356,8 +356,35 @@ get_manual_override() {
   if [ -f "mod_overrides.conf" ]; then
     local override_url=$(grep "^$filename=" mod_overrides.conf | cut -d'=' -f2-)
     if [ -n "$override_url" ]; then
-      echo "$override_url"
-      return 0
+      # Check if it's a modrinth project ID reference (format: modrinth:project_id)
+      if [[ "$override_url" == modrinth:* ]]; then
+        local project_id="${override_url#modrinth:}"
+        # Look up the mod file's hash to find the exact version on Modrinth
+        # Try both possible locations for the mod file
+        local file_path=""
+        if [ -f "${MODS_DIR:-mods}/$filename" ]; then
+          file_path="${MODS_DIR:-mods}/$filename"
+        elif [ -f "mods/$filename" ]; then
+          file_path="mods/$filename"
+        fi
+        
+        if [ -n "$file_path" ] && [ -f "$file_path" ]; then
+          local file_hash=$(calculate_sha512 "$file_path")
+          api_rate_limit
+          local version_data=$(curl -s "https://api.modrinth.com/v2/version_file/$file_hash?algorithm=sha512" 2>/dev/null || echo "")
+          if [ -n "$version_data" ] && echo "$version_data" | jq -e '.files[0].url' >/dev/null 2>&1; then
+            local modrinth_url=$(echo "$version_data" | jq -r '.files[0].url')
+            echo "$modrinth_url"
+            return 0
+          fi
+        fi
+        # If modrinth: lookup failed, return failure so it falls back to normal lookup
+        return 1
+      else
+        # Direct URL override
+        echo "$override_url"
+        return 0
+      fi
     fi
   fi
   
